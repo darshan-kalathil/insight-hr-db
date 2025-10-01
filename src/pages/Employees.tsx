@@ -83,6 +83,7 @@ const Employees = () => {
       name: formData.get('name') as string,
       status: formData.get('status') as string,
       official_email: formData.get('official_email') as string,
+      personal_email: formData.get('personal_email') as string || null,
       mobile_number: formData.get('mobile_number') as string,
       pod: formData.get('pod') as string,
       pod_lead: formData.get('pod_lead') as string,
@@ -184,6 +185,10 @@ const Employees = () => {
                     <div className="space-y-2">
                       <Label htmlFor="official_email">Official Email*</Label>
                       <Input id="official_email" name="official_email" type="email" defaultValue={editingEmployee?.official_email} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="personal_email">Personal Email</Label>
+                      <Input id="personal_email" name="personal_email" type="email" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="mobile_number">Mobile Number</Label>
