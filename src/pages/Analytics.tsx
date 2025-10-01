@@ -26,8 +26,13 @@ const Analytics = () => {
 
       if (error) throw error;
 
-      // Level distribution
-      const levelCounts = employees.reduce((acc: any, emp: any) => {
+      // Filter active employees for charts
+      const activeEmployees = employees.filter((e: any) => 
+        e.status === 'Active' || e.status === 'Serving Notice Period'
+      );
+
+      // Level distribution (active employees only)
+      const levelCounts = activeEmployees.reduce((acc: any, emp: any) => {
         acc[emp.level] = (acc[emp.level] || 0) + 1;
         return acc;
       }, {});
@@ -35,8 +40,8 @@ const Analytics = () => {
         Object.entries(levelCounts).map(([name, value]) => ({ name, value }))
       );
 
-      // POD distribution
-      const podCounts = employees.reduce((acc: any, emp: any) => {
+      // POD distribution (active employees only)
+      const podCounts = activeEmployees.reduce((acc: any, emp: any) => {
         acc[emp.pod] = (acc[emp.pod] || 0) + 1;
         return acc;
       }, {});
@@ -48,7 +53,9 @@ const Analytics = () => {
       );
 
       // Attrition analysis
-      const activeCount = employees.filter((e: any) => e.status === 'Active').length;
+      const activeCount = employees.filter((e: any) => 
+        e.status === 'Active' || e.status === 'Serving Notice Period'
+      ).length;
       const inactiveCount = employees.filter((e: any) => e.status === 'Inactive').length;
       const noticeCount = employees.filter((e: any) => e.status === 'Serving Notice Period').length;
       
