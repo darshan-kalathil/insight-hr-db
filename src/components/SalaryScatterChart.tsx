@@ -133,10 +133,10 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
       return (
         <div className="bg-black text-white px-4 py-3 rounded-md shadow-lg space-y-1">
           <p className="font-bold text-lg">{data.name}</p>
-          <p className="text-sm">Band: {data.level}</p>
+          <p className="text-sm">Level: {data.level}</p>
           <div className="border-t border-gray-600 my-2 pt-2 space-y-1">
             <p className="text-sm">Fixed Salary: {formatCurrency(fixedSalary)}</p>
-            <p className="text-sm">EPF (6%): {formatCurrency(epf)}</p>
+            <p className="text-sm">EPF: {formatCurrency(epf)}</p>
             <p className="text-sm">Variable ({variablePercentage}%): {formatCurrency(variable)}</p>
             <p className="font-semibold border-t border-gray-600 pt-1 mt-1">CTC: {formatCurrency(ctc)}</p>
           </div>
