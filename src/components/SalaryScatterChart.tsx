@@ -33,7 +33,7 @@ const LEVEL_COLORS: Record<string, string> = {
 
 export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterChartProps) => {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-  const [salaryMode, setSalaryMode] = useState<'fixed' | 'fixed-epf'>('fixed-epf');
+  const [salaryMode, setSalaryMode] = useState<'fixed' | 'fixed-epf' | 'ctc'>('fixed-epf');
 
   // Helper to normalize level format (N-1 -> N+1)
   const normalizeLevel = (level: string) => {
@@ -48,10 +48,17 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
 
     // Convert to chart format with index and salary in lakhs
     return employeesWithSalary.map((emp, index) => {
-      const displaySalary = salaryMode === 'fixed-epf' 
-        ? emp.salary + (emp.salary * 0.06) // Fixed + EPF
-        : emp.salary; // Fixed only
       const normalizedLevel = normalizeLevel(emp.level);
+      const levelRange = salaryRanges.find(r => normalizeLevel(r.level) === normalizedLevel);
+      const variablePercentage = levelRange?.variable_pay_percentage || 0;
+      
+      let displaySalary = emp.salary; // Fixed only
+      if (salaryMode === 'fixed-epf') {
+        displaySalary = emp.salary + (emp.salary * 0.06); // Fixed + EPF
+      } else if (salaryMode === 'ctc') {
+        displaySalary = emp.salary + (emp.salary * 0.06) + (emp.salary * (variablePercentage / 100)); // CTC
+      }
+      
       return {
         index: index,
         salary: displaySalary / 100000, // Convert to lakhs
@@ -92,12 +99,16 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
       ? (salaries[salaries.length / 2 - 1] + salaries[salaries.length / 2]) / 2
       : salaries[Math.floor(salaries.length / 2)];
 
-    const minSalary = salaryMode === 'fixed-epf'
-      ? (range.min_salary + (range.min_salary * 0.06)) / 100000
-      : range.min_salary / 100000;
-    const maxSalary = salaryMode === 'fixed-epf'
-      ? (range.max_salary + (range.max_salary * 0.06)) / 100000
-      : range.max_salary / 100000;
+    let minSalary = range.min_salary / 100000;
+    let maxSalary = range.max_salary / 100000;
+    
+    if (salaryMode === 'fixed-epf') {
+      minSalary = (range.min_salary + (range.min_salary * 0.06)) / 100000;
+      maxSalary = (range.max_salary + (range.max_salary * 0.06)) / 100000;
+    } else if (salaryMode === 'ctc') {
+      minSalary = (range.min_salary + (range.min_salary * 0.06) + (range.min_salary * (range.variable_pay_percentage / 100))) / 100000;
+      maxSalary = (range.max_salary + (range.max_salary * 0.06) + (range.max_salary * (range.variable_pay_percentage / 100))) / 100000;
+    }
 
     return {
       min: minSalary,
@@ -166,13 +177,14 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
       <div className="mb-6 space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold">Levels (Click dots to show ranges):</h3>
-          <Select value={salaryMode} onValueChange={(value: 'fixed' | 'fixed-epf') => setSalaryMode(value)}>
+          <Select value={salaryMode} onValueChange={(value: 'fixed' | 'fixed-epf' | 'ctc') => setSalaryMode(value)}>
             <SelectTrigger className="w-[200px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="fixed">Fixed Salary</SelectItem>
               <SelectItem value="fixed-epf">Fixed Salary w/ EPF</SelectItem>
+              <SelectItem value="ctc">CTC</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -211,10 +223,10 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
           <YAxis
             type="number"
             dataKey="salary"
-            name={salaryMode === 'fixed-epf' ? 'Fixed Salary w/ EPF' : 'Fixed Salary'}
+            name={salaryMode === 'ctc' ? 'CTC' : salaryMode === 'fixed-epf' ? 'Fixed Salary w/ EPF' : 'Fixed Salary'}
             domain={[0, 'auto']}
             label={{ 
-              value: salaryMode === 'fixed-epf' ? 'Fixed Salary w/ EPF' : 'Fixed Salary', 
+              value: salaryMode === 'ctc' ? 'CTC' : salaryMode === 'fixed-epf' ? 'Fixed Salary w/ EPF' : 'Fixed Salary', 
               angle: -90, 
               position: 'insideLeft' 
             }}
