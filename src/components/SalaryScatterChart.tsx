@@ -205,19 +205,6 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
               fill={LEVEL_COLORS[level] || '#6B7280'}
             />
           ))}
-
-          {/* Level labels positioned above chart */}
-          {Object.entries(levelPositions).map(([level, position]) => (
-            <text
-              key={`label-${level}`}
-              x={position * (100 / (chartData.length + 5)) + '%'}
-              y={20}
-              textAnchor="middle"
-              style={{ fill: LEVEL_COLORS[level], fontWeight: 'bold', fontSize: '14px' }}
-            >
-              {level}
-            </text>
-          ))}
         </ScatterChart>
       </ResponsiveContainer>
     </Card>
