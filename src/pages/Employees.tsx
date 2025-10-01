@@ -260,7 +260,7 @@ const Employees = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="birthday">Birthday</Label>
-                      <Input id="birthday" name="birthday" type="date" />
+                      <Input id="birthday" name="birthday" type="date" defaultValue={(editingEmployee as any)?.birthday} />
                     </div>
                   </div>
                   <Button type="submit" className="w-full">
