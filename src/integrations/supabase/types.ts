@@ -32,6 +32,7 @@ export type Database = {
           pod: string
           pod_lead: string | null
           reporting_manager: string | null
+          salary: number | null
           status: string
           type: string | null
           updated_at: string
@@ -53,6 +54,7 @@ export type Database = {
           pod: string
           pod_lead?: string | null
           reporting_manager?: string | null
+          salary?: number | null
           status?: string
           type?: string | null
           updated_at?: string
@@ -74,6 +76,7 @@ export type Database = {
           pod?: string
           pod_lead?: string | null
           reporting_manager?: string | null
+          salary?: number | null
           status?: string
           type?: string | null
           updated_at?: string
@@ -101,6 +104,36 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      salary_ranges: {
+        Row: {
+          created_at: string
+          id: string
+          level: string
+          max_salary: number
+          min_salary: number
+          updated_at: string
+          variable_pay_percentage: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level: string
+          max_salary: number
+          min_salary: number
+          updated_at?: string
+          variable_pay_percentage: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: string
+          max_salary?: number
+          min_salary?: number
+          updated_at?: string
+          variable_pay_percentage?: number
         }
         Relationships: []
       }

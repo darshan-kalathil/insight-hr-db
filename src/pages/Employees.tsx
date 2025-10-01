@@ -96,6 +96,7 @@ const Employees = () => {
       pod_lead: formData.get('pod_lead') as string,
       reporting_manager: formData.get('reporting_manager') as string,
       level: formData.get('level') as string,
+      salary: formData.get('salary') ? parseFloat(formData.get('salary') as string) : null,
       doj: formData.get('doj') as string,
       location: formData.get('location') as string,
       gender: formData.get('gender') as string,
@@ -231,6 +232,10 @@ const Employees = () => {
                     <div className="space-y-2">
                       <Label htmlFor="level">Level*</Label>
                       <Input id="level" name="level" placeholder="N+1, N+2, etc." defaultValue={editingEmployee?.level} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="salary">Fixed Salary</Label>
+                      <Input id="salary" name="salary" type="number" step="0.01" placeholder="Enter salary" defaultValue={(editingEmployee as any)?.salary} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="doj">Date of Joining*</Label>
