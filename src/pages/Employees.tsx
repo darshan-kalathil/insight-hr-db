@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Pencil, Upload } from 'lucide-react';
+import { Plus, Search, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '@/hooks/useAuth';
+import { EmployeeImport } from '@/components/EmployeeImport';
 
 type Employee = {
   id: string;
@@ -30,11 +32,27 @@ const Employees = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchEmployees();
-  }, []);
+    checkSuperAdmin();
+  }, [user]);
+
+  const checkSuperAdmin = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'super_admin')
+      .single();
+
+    setIsSuperAdmin(!!data);
+  };
 
   const fetchEmployees = async () => {
     try {
@@ -124,6 +142,10 @@ const Employees = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {isSuperAdmin && (
+          <EmployeeImport onImportComplete={fetchEmployees} />
+        )}
+        
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Employee Management</h1>
           <div className="flex gap-2">
