@@ -142,10 +142,6 @@ const Employees = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {isSuperAdmin && (
-          <EmployeeImport onImportComplete={fetchEmployees} />
-        )}
-        
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Employee Management</h1>
           <div className="flex gap-2">
@@ -315,6 +311,10 @@ const Employees = () => {
             </TableBody>
           </Table>
         </div>
+
+        {isSuperAdmin && (
+          <EmployeeImport onImportComplete={fetchEmployees} />
+        )}
       </div>
     </DashboardLayout>
   );
