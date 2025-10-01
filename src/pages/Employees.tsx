@@ -36,7 +36,7 @@ const Employees = () => {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>('Active');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('Active');
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
   const [podFilter, setPodFilter] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState<string>('all');
