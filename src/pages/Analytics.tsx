@@ -18,17 +18,16 @@ const getCurrentFinancialYear = () => {
   const today = new Date();
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth(); // 0-indexed
-  
+
   // If we're in Jan-Mar, financial year started last year
   // If we're in Apr-Dec, financial year started this year
   const fyStartYear = currentMonth < 3 ? currentYear - 1 : currentYear;
-  
   return {
-    start: new Date(fyStartYear, 3, 1), // April 1
+    start: new Date(fyStartYear, 3, 1),
+    // April 1
     end: new Date(fyStartYear + 1, 2, 31) // March 31
   };
 };
-
 const Analytics = () => {
   const [levelData, setLevelData] = useState<any[]>([]);
   const [podData, setPodData] = useState<any[]>([]);
@@ -36,11 +35,9 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [podFilter, setPodFilter] = useState<string>('all');
   const [uniquePods, setUniquePods] = useState<string[]>([]);
-  
   const fy = getCurrentFinancialYear();
   const [periodFrom, setPeriodFrom] = useState<Date>(fy.start);
   const [periodTo, setPeriodTo] = useState<Date>(fy.end);
-  
   const {
     toast
   } = useToast();
@@ -87,19 +84,19 @@ const Analytics = () => {
       const activeCount = employees.filter((e: any) => e.status === 'Active' || e.status === 'Serving Notice Period').length;
       const inactiveCount = employees.filter((e: any) => e.status === 'Inactive').length;
       const noticeCount = employees.filter((e: any) => e.status === 'Serving Notice Period').length;
-      
+
       // Employees who left during the period
       const employeesWhoLeft = employees.filter((e: any) => {
         if (!e.date_of_exit) return false;
         const exitDate = new Date(e.date_of_exit);
         return exitDate >= periodFrom && exitDate <= periodTo && e.status === 'Inactive';
       }).length;
-      
+
       // Headcount at start of period
       const headcountAtStart = employees.filter((e: any) => {
         const joinDate = new Date(e.doj);
         if (joinDate > periodFrom) return false;
-        
+
         // Either currently active or left after the start date
         if (e.status === 'Active' || e.status === 'Serving Notice Period') return true;
         if (e.date_of_exit) {
@@ -108,12 +105,12 @@ const Analytics = () => {
         }
         return false;
       }).length;
-      
+
       // Headcount at end of period
       const headcountAtEnd = employees.filter((e: any) => {
         const joinDate = new Date(e.doj);
         if (joinDate > periodTo) return false;
-        
+
         // Either currently active or left after the end date
         if (e.status === 'Active' || e.status === 'Serving Notice Period') return true;
         if (e.date_of_exit) {
@@ -122,11 +119,10 @@ const Analytics = () => {
         }
         return false;
       }).length;
-      
+
       // Calculate average headcount and attrition rate
       const averageHeadcount = (headcountAtStart + headcountAtEnd) / 2;
       const attritionRate = averageHeadcount > 0 ? (employeesWhoLeft / averageHeadcount * 100).toFixed(2) : '0.00';
-      
       setAttritionData({
         total: employees.length,
         active: activeCount,
@@ -161,55 +157,31 @@ const Analytics = () => {
           {/* Date Range Selectors */}
           <div className="flex items-center gap-4">
             <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">Period From</span>
+              <span className="text-sm text-muted-foreground">Attrition: From</span>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[200px] justify-start text-left font-normal",
-                      !periodFrom && "text-muted-foreground"
-                    )}
-                  >
+                  <Button variant="outline" className={cn("w-[200px] justify-start text-left font-normal", !periodFrom && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {periodFrom ? format(periodFrom, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={periodFrom}
-                    onSelect={(date) => date && setPeriodFrom(date)}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
+                  <Calendar mode="single" selected={periodFrom} onSelect={date => date && setPeriodFrom(date)} initialFocus className="pointer-events-auto" />
                 </PopoverContent>
               </Popover>
             </div>
             
             <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">Period To</span>
+              <span className="text-sm text-muted-foreground">Attrition: To</span>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[200px] justify-start text-left font-normal",
-                      !periodTo && "text-muted-foreground"
-                    )}
-                  >
+                  <Button variant="outline" className={cn("w-[200px] justify-start text-left font-normal", !periodTo && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {periodTo ? format(periodTo, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={periodTo}
-                    onSelect={(date) => date && setPeriodTo(date)}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
+                  <Calendar mode="single" selected={periodTo} onSelect={date => date && setPeriodTo(date)} initialFocus className="pointer-events-auto" />
                 </PopoverContent>
               </Popover>
             </div>
@@ -260,9 +232,7 @@ const Analytics = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All PODs</SelectItem>
-                    {uniquePods.map(pod => (
-                      <SelectItem key={pod} value={pod}>{pod}</SelectItem>
-                    ))}
+                    {uniquePods.map(pod => <SelectItem key={pod} value={pod}>{pod}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -293,7 +263,7 @@ const Analytics = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
                   <YAxis />
-                  <Tooltip formatter={(value) => [value, 'Count']} />
+                  <Tooltip formatter={value => [value, 'Count']} />
                   <Bar dataKey="value" fill="hsl(var(--primary))" />
                 </BarChart>
               </ResponsiveContainer>
