@@ -337,6 +337,10 @@ const Employees = () => {
           </Select>
         </div>
 
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredEmployees.length} {filteredEmployees.length === 1 ? 'employee' : 'employees'}
+        </div>
+
         <div className="border rounded-lg">
           <Table>
             <TableHeader>
