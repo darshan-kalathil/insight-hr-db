@@ -5,11 +5,14 @@ A comprehensive HR analytics application for tracking employee data, attrition r
 ## Features
 
 - 📊 **Real-time Analytics** - Track attrition rates, headcount trends, and workforce distribution
-- 👥 **Employee Management** - View, search, and manage employee records
+- 👥 **Employee Management** - View, search, and manage employee records with status tracking
+- 💰 **Salary Visualization** - Interactive scatter charts showing salary distribution across levels
+- 📊 **Salary Range Management** - Define and manage salary ranges with variable pay percentages
 - 📈 **Interactive Charts** - Visualize data by pod, level, location, and gender
 - 📅 **Period-based Analysis** - Analyze metrics across custom date ranges (defaults to financial year)
 - 📤 **Excel Import** - Bulk upload employee data via Excel files
 - 🔐 **Authentication** - Secure login system with role-based access
+- ⚡ **Automated Status Updates** - Automatic employee status transitions based on exit dates
 - 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
 
 ## Tech Stack
@@ -143,7 +146,7 @@ Stores all employee information:
 - `mobile_number` (text, nullable)
 - `personal_email` (text, nullable)
 - `doj` (date, date of joining)
-- `date_of_exit` (date, nullable)
+- `date_of_exit` (date, nullable, required when status is "Serving Notice Period")
 - `birthday` (date, nullable)
 - `status` (text, default: 'Active')
 - `type` (text, default: 'EMP')
@@ -153,6 +156,7 @@ Stores all employee information:
 - `level` (text)
 - `location` (text)
 - `gender` (text, nullable)
+- `salary` (numeric, nullable, fixed salary amount)
 - `created_at`, `updated_at` (timestamps)
 
 #### `profiles`
@@ -168,12 +172,22 @@ Role-based access control:
 - `user_id` (uuid, references auth.users)
 - `role` (enum: 'super_admin', 'admin', 'user')
 
+#### `salary_ranges`
+Define salary ranges for each level:
+- `id` (uuid, primary key)
+- `level` (text, employee level)
+- `min_salary` (numeric, minimum fixed salary)
+- `max_salary` (numeric, maximum fixed salary)
+- `variable_pay_percentage` (numeric, percentage of fixed salary for variable pay)
+- `created_at`, `updated_at` (timestamps)
+
 ### Row Level Security (RLS)
 
 All tables have RLS policies enabled:
 - **Employees**: Authenticated users can view/insert/update; only super admins can delete
 - **Profiles**: Users can view all profiles and update their own
 - **User Roles**: Only super admins can manage roles
+- **Salary Ranges**: Authenticated users can view; only super admins can insert/update/delete
 
 ## Excel Import Format
 
@@ -197,6 +211,7 @@ The app supports importing employees via Excel files with these columns:
 | Level | Text | Yes | L3 |
 | Location | Text | Yes | Bangalore |
 | Gender | Text | No | Male |
+| Salary | Number | No | 1200000 |
 
 ## Development
 
@@ -208,11 +223,14 @@ The app supports importing employees via Excel files with these columns:
 │   │   ├── ui/             # shadcn/ui components
 │   │   ├── DashboardLayout.tsx
 │   │   ├── EmployeeImport.tsx
-│   │   └── ProtectedRoute.tsx
+│   │   ├── ProtectedRoute.tsx
+│   │   ├── SalaryScatterChart.tsx
+│   │   └── SalaryRangesTable.tsx
 │   ├── pages/              # Page components
 │   │   ├── Analytics.tsx
 │   │   ├── Auth.tsx
 │   │   ├── Employees.tsx
+│   │   ├── Salary.tsx
 │   │   └── Users.tsx
 │   ├── hooks/              # Custom React hooks
 │   │   └── useAuth.ts
@@ -222,6 +240,8 @@ The app supports importing employees via Excel files with these columns:
 │   └── main.tsx            # App entry point
 ├── supabase/
 │   ├── functions/          # Edge functions
+│   │   ├── invite-user/    # User invitation edge function
+│   │   └── update-employee-status/  # Daily cron job for status updates
 │   └── migrations/         # Database migrations
 └── public/                 # Static assets
 ```
@@ -251,9 +271,32 @@ The app supports importing employees via Excel files with these columns:
 3. Protected routes check authentication status
 4. User roles determine access to features (e.g., user management)
 
-## Analytics Calculations
+## Key Features Detail
 
-### Attrition Rate
+### Salary Visualization
+
+The salary visualization page provides comprehensive salary analysis:
+
+- **Scatter Chart**: Visualize salary distribution across all employees, grouped by level
+- **Salary Modes**: 
+  - **Fixed Salary**: Base salary amount
+  - **Fixed + EPF**: Base salary + 6% EPF contribution
+  - **CTC**: Complete Cost to Company (Fixed + EPF + Variable Pay)
+- **Interactive Level Selection**: Click on any level to display min, max, and median salary lines
+- **Detailed Tooltips**: Hover over employee data points to see breakdown of salary components
+- **Salary Range Management**: Super admins can define and update salary ranges for each level
+
+### Employee Status Management
+
+The system includes intelligent status tracking:
+
+- **Status Validation**: When changing status to "Serving Notice Period", Date of Exit is mandatory
+- **Automatic Status Updates**: A daily cron job automatically updates employees from "Serving Notice Period" to "Inactive" when their exit date is reached
+- **Status Options**: Active, Inactive, Serving Notice Period
+
+### Analytics Calculations
+
+#### Attrition Rate
 ```
 Attrition Rate = (Employees Who Left / Average Headcount) × 100
 
