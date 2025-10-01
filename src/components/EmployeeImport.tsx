@@ -63,9 +63,9 @@ export const EmployeeImport = ({
           const employeeData = {
             empl_no: row['Empl No']?.toString(),
             name: row['Name'],
-            official_email: row['Official Email ID'],
+            official_email: row['Officia EMail ID'],
             mobile_number: row['Mobile Number']?.toString() || null,
-            personal_email: row['Personal Email ID'] || null,
+            personal_email: row['Personal EMail ID'] || null,
             status: row['Status'] || 'Active',
             pod: row['POD'],
             pod_lead: row['POD Lead'] || null,
