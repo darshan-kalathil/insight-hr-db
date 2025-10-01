@@ -275,16 +275,79 @@ The app supports importing employees via Excel files with these columns:
 
 ### Salary Visualization
 
-The salary visualization page provides comprehensive salary analysis:
+The `/salary` page provides comprehensive salary analysis and management tools with interactive visualizations.
 
-- **Scatter Chart**: Visualize salary distribution across all employees, grouped by level
-- **Salary Modes**: 
-  - **Fixed Salary**: Base salary amount
-  - **Fixed + EPF**: Base salary + 6% EPF contribution
-  - **CTC**: Complete Cost to Company (Fixed + EPF + Variable Pay)
-- **Interactive Level Selection**: Click on any level to display min, max, and median salary lines
-- **Detailed Tooltips**: Hover over employee data points to see breakdown of salary components
-- **Salary Range Management**: Super admins can define and update salary ranges for each level
+#### Page Components
+
+**SalaryScatterChart Component** (`src/components/SalaryScatterChart.tsx`)
+- Displays an interactive scatter plot of all active employees' salaries
+- Each employee is plotted based on their salary amount (Y-axis) and level (X-axis)
+- Color-coded by employee level for easy visual grouping
+- Real-time calculation of salary values based on selected mode
+
+**SalaryRangesTable Component** (`src/components/SalaryRangesTable.tsx`)
+- Displays salary ranges defined for each level
+- Shows min/max salary and variable pay percentage per level
+- Inline editing for super admins with validation
+- Updates are persisted to the `salary_ranges` table
+
+#### Salary Calculation Modes
+
+The chart supports three salary calculation modes:
+
+1. **Fixed Salary Mode**
+   ```
+   Display Salary = Fixed Salary (from employees.salary)
+   ```
+   Shows the base salary amount stored in the database.
+
+2. **Fixed + EPF Mode**
+   ```
+   Display Salary = Fixed Salary + (Fixed Salary × 0.06)
+   ```
+   Adds 6% EPF (Employer's Provident Fund) contribution to the fixed salary.
+
+3. **CTC Mode (Cost to Company)**
+   ```
+   Display Salary = Fixed Salary + EPF + Variable Pay
+   
+   Where:
+   - EPF = Fixed Salary × 0.06
+   - Variable Pay = Fixed Salary × (variable_pay_percentage / 100)
+   - variable_pay_percentage comes from the salary_ranges table for each level
+   ```
+   Calculates the complete cost to company including all components.
+
+#### Interactive Features
+
+- **Level Selection**: Click any level button to highlight it and display reference lines showing:
+  - Minimum salary (from salary_ranges table)
+  - Maximum salary (from salary_ranges table)
+  - Median salary (calculated from actual employee data)
+  
+- **Detailed Tooltips**: Hover over any employee data point to see:
+  - Employee name
+  - Fixed Salary
+  - EPF Contribution (6% of fixed)
+  - Variable Pay (based on level's variable_pay_percentage)
+  - Total CTC
+  
+- **Dynamic Y-Axis**: The chart label automatically updates based on selected mode
+
+#### Data Flow
+
+1. **Employee Data**: Fetched from `employees` table (active employees only)
+2. **Salary Ranges**: Fetched from `salary_ranges` table (defines min/max/variable % per level)
+3. **Chart Data**: Processed in real-time based on selected salary mode
+4. **Level Normalization**: Handles variations in level naming (e.g., "N-1", "N+1" → "N1", "N+1")
+
+#### Salary Range Management
+
+Super admins can manage salary ranges through the table:
+- **View**: All authenticated users can view salary ranges
+- **Edit**: Click edit icon to modify min/max salary values
+- **Validation**: Ensures max salary is greater than min salary
+- **Persistence**: Changes are saved to the `salary_ranges` table with RLS enforcement
 
 ### Employee Status Management
 
