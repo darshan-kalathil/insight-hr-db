@@ -33,6 +33,11 @@ const Employees = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [levelFilter, setLevelFilter] = useState<string>('all');
+  const [podFilter, setPodFilter] = useState<string>('all');
+  const [locationFilter, setLocationFilter] = useState<string>('all');
+  const [genderFilter, setGenderFilter] = useState<string>('all');
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -134,11 +139,26 @@ const Employees = () => {
     }
   };
 
-  const filteredEmployees = employees.filter(emp =>
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.empl_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.official_email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEmployees = employees.filter(emp => {
+    const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.empl_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.official_email.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || emp.status === statusFilter;
+    const matchesLevel = levelFilter === 'all' || emp.level === levelFilter;
+    const matchesPod = podFilter === 'all' || emp.pod === podFilter;
+    const matchesLocation = locationFilter === 'all' || emp.location === locationFilter;
+    const matchesGender = genderFilter === 'all' || (emp as any).gender === genderFilter;
+
+    return matchesSearch && matchesStatus && matchesLevel && matchesPod && matchesLocation && matchesGender;
+  });
+
+  // Get unique values for filters
+  const uniqueStatuses = Array.from(new Set(employees.map(e => e.status)));
+  const uniqueLevels = Array.from(new Set(employees.map(e => e.level)));
+  const uniquePods = Array.from(new Set(employees.map(e => e.pod)));
+  const uniqueLocations = Array.from(new Set(employees.map(e => e.location)));
+  const uniqueGenders = Array.from(new Set(employees.map(e => (e as any).gender).filter(Boolean)));
 
   return (
     <DashboardLayout>
@@ -245,7 +265,7 @@ const Employees = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -255,6 +275,66 @@ const Employees = () => {
               className="pl-10"
             />
           </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              {uniqueStatuses.map(status => (
+                <SelectItem key={status} value={status}>{status}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={levelFilter} onValueChange={setLevelFilter}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Levels</SelectItem>
+              {uniqueLevels.map(level => (
+                <SelectItem key={level} value={level}>{level}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={podFilter} onValueChange={setPodFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="POD" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All PODs</SelectItem>
+              {uniquePods.map(pod => (
+                <SelectItem key={pod} value={pod}>{pod}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Location" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              {uniqueLocations.map(location => (
+                <SelectItem key={location} value={location}>{location}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={genderFilter} onValueChange={setGenderFilter}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Genders</SelectItem>
+              {uniqueGenders.map(gender => (
+                <SelectItem key={gender} value={gender}>{gender}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="border rounded-lg">
