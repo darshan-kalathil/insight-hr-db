@@ -152,7 +152,7 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
       </div>
 
       <ResponsiveContainer width="100%" height={600}>
-        <ScatterChart margin={{ top: 40, right: 20, bottom: 20, left: 60 }}>
+        <ScatterChart margin={{ top: 40, right: 100, bottom: 20, left: 60 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             type="number"
@@ -178,20 +178,39 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
                 y={levelStats.min}
                 stroke={LEVEL_COLORS[selectedLevel!]}
                 strokeWidth={2}
-                label={{ value: 'Min', position: 'right', fill: LEVEL_COLORS[selectedLevel!] }}
+                label={{ 
+                  value: `Min: ${levelStats.min.toFixed(1)}L`, 
+                  position: 'insideTopRight',
+                  fill: LEVEL_COLORS[selectedLevel!],
+                  fontSize: 12,
+                  fontWeight: 'bold'
+                }}
               />
               <ReferenceLine
                 y={levelStats.max}
                 stroke={LEVEL_COLORS[selectedLevel!]}
                 strokeWidth={2}
-                label={{ value: 'Max', position: 'right', fill: LEVEL_COLORS[selectedLevel!] }}
+                label={{ 
+                  value: `Max: ${levelStats.max.toFixed(1)}L`, 
+                  position: 'insideBottomRight',
+                  fill: LEVEL_COLORS[selectedLevel!],
+                  fontSize: 12,
+                  fontWeight: 'bold'
+                }}
               />
               <ReferenceLine
                 y={levelStats.median}
                 stroke={LEVEL_COLORS[selectedLevel!]}
                 strokeWidth={2}
                 strokeDasharray="5 5"
-                label={{ value: 'Median', position: 'right', fill: LEVEL_COLORS[selectedLevel!] }}
+                label={{ 
+                  value: `Median: ${levelStats.median.toFixed(1)}L`, 
+                  position: 'insideTopRight',
+                  fill: LEVEL_COLORS[selectedLevel!],
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  offset: 15
+                }}
               />
             </>
           )}
