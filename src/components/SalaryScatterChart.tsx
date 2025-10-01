@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Employee {
   id: string;
@@ -32,6 +33,7 @@ const LEVEL_COLORS: Record<string, string> = {
 
 export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterChartProps) => {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const [salaryMode, setSalaryMode] = useState<'fixed' | 'fixed-epf'>('fixed-epf');
 
   // Helper to normalize level format (N-1 -> N+1)
   const normalizeLevel = (level: string) => {
@@ -44,20 +46,22 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
       .filter(emp => emp.salary && emp.salary > 0)
       .sort((a, b) => b.salary - a.salary);
 
-    // Convert to chart format with index and salary in lakhs (including EPF)
+    // Convert to chart format with index and salary in lakhs
     return employeesWithSalary.map((emp, index) => {
-      const totalCompensation = emp.salary + (emp.salary * 0.06); // Fixed + EPF
+      const displaySalary = salaryMode === 'fixed-epf' 
+        ? emp.salary + (emp.salary * 0.06) // Fixed + EPF
+        : emp.salary; // Fixed only
       const normalizedLevel = normalizeLevel(emp.level);
       return {
         index: index,
-        salary: totalCompensation / 100000, // Convert to lakhs
+        salary: displaySalary / 100000, // Convert to lakhs
         name: emp.name,
         level: normalizedLevel,
         originalSalary: emp.salary,
         fill: LEVEL_COLORS[normalizedLevel] || '#6B7280',
       };
     });
-  }, [employees]);
+  }, [employees, salaryMode]);
 
   // Group data by level for separate scatter series
   const dataByLevel = useMemo(() => {
@@ -88,12 +92,19 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
       ? (salaries[salaries.length / 2 - 1] + salaries[salaries.length / 2]) / 2
       : salaries[Math.floor(salaries.length / 2)];
 
+    const minSalary = salaryMode === 'fixed-epf'
+      ? (range.min_salary + (range.min_salary * 0.06)) / 100000
+      : range.min_salary / 100000;
+    const maxSalary = salaryMode === 'fixed-epf'
+      ? (range.max_salary + (range.max_salary * 0.06)) / 100000
+      : range.max_salary / 100000;
+
     return {
-      min: (range.min_salary + (range.min_salary * 0.06)) / 100000, // Include EPF
-      max: (range.max_salary + (range.max_salary * 0.06)) / 100000, // Include EPF
+      min: minSalary,
+      max: maxSalary,
       median: median,
     };
-  }, [selectedLevel, salaryRanges, chartData]);
+  }, [selectedLevel, salaryRanges, chartData, salaryMode]);
 
   // Get level positions for labels
   const levelPositions = useMemo(() => {
@@ -135,10 +146,10 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
           <p className="font-bold text-lg">{data.name}</p>
           <p className="text-sm">Level: {data.level}</p>
           <div className="border-t border-gray-600 my-2 pt-2 space-y-1">
-            <p className="text-sm">Fixed Salary: {formatCurrency(fixedSalary)}</p>
+            <p className="text-sm font-bold">Fixed Salary: {formatCurrency(fixedSalary)}</p>
             <p className="text-sm">EPF: {formatCurrency(epf)}</p>
             <p className="text-sm">Variable ({variablePercentage}%): {formatCurrency(variable)}</p>
-            <p className="font-semibold border-t border-gray-600 pt-1 mt-1">CTC: {formatCurrency(ctc)}</p>
+            <p className="text-sm border-t border-gray-600 pt-1 mt-1">CTC: {formatCurrency(ctc)}</p>
           </div>
         </div>
       );
@@ -152,8 +163,19 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
 
   return (
     <Card className="p-6">
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-4">Levels (Click dots to show ranges):</h3>
+      <div className="mb-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Levels (Click dots to show ranges):</h3>
+          <Select value={salaryMode} onValueChange={(value: 'fixed' | 'fixed-epf') => setSalaryMode(value)}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixed">Fixed Salary</SelectItem>
+              <SelectItem value="fixed-epf">Fixed Salary w/ EPF</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex flex-wrap gap-4 justify-center">
           {Object.entries(LEVEL_COLORS).map(([level, color]) => (
             <button
@@ -189,9 +211,13 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
           <YAxis
             type="number"
             dataKey="salary"
-            name="Fixed Salary"
+            name={salaryMode === 'fixed-epf' ? 'Fixed Salary w/ EPF' : 'Fixed Salary'}
             domain={[0, 'auto']}
-            label={{ value: 'Fixed Salary', angle: -90, position: 'insideLeft' }}
+            label={{ 
+              value: salaryMode === 'fixed-epf' ? 'Fixed Salary w/ EPF' : 'Fixed Salary', 
+              angle: -90, 
+              position: 'insideLeft' 
+            }}
             tickFormatter={(value) => `${value}L`}
           />
           <Tooltip content={<CustomTooltip />} />
