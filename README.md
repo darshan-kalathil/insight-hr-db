@@ -1,73 +1,278 @@
-# Welcome to your Lovable project
+# HR Analytics Dashboard
 
-## Project info
+A comprehensive HR analytics application for tracking employee data, attrition rates, and workforce metrics with interactive visualizations and Excel import capabilities.
 
-**URL**: https://lovable.dev/projects/ffae601c-469d-4b74-b123-4b2f23f14864
+## Features
 
-## How can I edit this code?
+- 📊 **Real-time Analytics** - Track attrition rates, headcount trends, and workforce distribution
+- 👥 **Employee Management** - View, search, and manage employee records
+- 📈 **Interactive Charts** - Visualize data by pod, level, location, and gender
+- 📅 **Period-based Analysis** - Analyze metrics across custom date ranges (defaults to financial year)
+- 📤 **Excel Import** - Bulk upload employee data via Excel files
+- 🔐 **Authentication** - Secure login system with role-based access
+- 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18, TypeScript, Vite
+- **UI Components**: shadcn/ui, Tailwind CSS
+- **Charts**: Recharts
+- **Backend**: Lovable Cloud (Supabase)
+- **Database**: PostgreSQL
+- **Authentication**: Supabase Auth
+- **File Processing**: XLSX (Excel parsing)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ffae601c-469d-4b74-b123-4b2f23f14864) and start prompting.
+## Deployment Options
 
-Changes made via Lovable will be committed automatically to this repo.
+### Option 1: Lovable Cloud (Recommended)
 
-**Use your preferred IDE**
+This is the easiest way to get started - everything is pre-configured!
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+#### Prerequisites
+- A Lovable account
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+#### Setup Steps
 
-Follow these steps:
+1. **Fork/Remix this project in Lovable**
+   - Visit [Lovable](https://lovable.dev) and import this repository
+   - The backend (database, auth, storage) is automatically provisioned
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. **The app is ready!**
+   - Database schema is auto-deployed
+   - Authentication is pre-configured
+   - No environment variables needed
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. **Deploy**
+   - Click "Publish" in Lovable
+   - Your app is live at `your-project.lovable.app`
 
-# Step 3: Install the necessary dependencies.
-npm i
+#### Managing Your Backend
+- Access your database, users, and settings through Lovable's backend interface
+- No Supabase account needed
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+---
+
+### Option 2: Self-Hosted with Custom Backend
+
+If you want to host this on your own infrastructure:
+
+#### Prerequisites
+- Node.js 18+ and npm/bun
+- A Supabase account (or any PostgreSQL database)
+
+#### Setup Steps
+
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd <repo-name>
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   bun install
+   ```
+
+3. **Set up Supabase Project**
+   - Create a new project at [supabase.com](https://supabase.com)
+   - Note your project URL and anon key
+
+4. **Run Database Migrations**
+   
+   Execute the SQL migrations in `supabase/migrations/` in order, or use the Supabase CLI:
+   
+   ```bash
+   # Install Supabase CLI
+   npm install -g supabase
+   
+   # Link to your project
+   supabase link --project-ref your-project-ref
+   
+   # Push migrations
+   supabase db push
+   ```
+
+5. **Configure Environment Variables**
+   
+   Create a `.env` file in the root directory:
+   
+   ```env
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+   VITE_SUPABASE_PROJECT_ID=your-project-id
+   ```
+
+6. **Configure Authentication**
+   
+   In your Supabase dashboard:
+   - Go to Authentication → URL Configuration
+   - Add your site URL (e.g., `http://localhost:5173` for local dev)
+   - Add redirect URLs for your deployment domains
+   - Enable email auto-confirmation for testing (optional)
+
+7. **Run locally**
+   ```bash
+   npm run dev
+   # or
+   bun run dev
+   ```
+   
+   App will be available at `http://localhost:5173`
+
+8. **Deploy**
+   
+   Deploy to your preferred hosting platform:
+   - **Vercel**: `vercel deploy`
+   - **Netlify**: Connect your repo and deploy
+   - **Custom server**: `npm run build` and serve the `dist` folder
+
+   Make sure to set the environment variables in your hosting platform!
+
+## Database Schema
+
+### Tables
+
+#### `employees`
+Stores all employee information:
+- `id` (uuid, primary key)
+- `empl_no` (text, unique employee number)
+- `name` (text)
+- `official_email` (text)
+- `mobile_number` (text, nullable)
+- `personal_email` (text, nullable)
+- `doj` (date, date of joining)
+- `date_of_exit` (date, nullable)
+- `birthday` (date, nullable)
+- `status` (text, default: 'Active')
+- `type` (text, default: 'EMP')
+- `pod` (text)
+- `pod_lead` (text, nullable)
+- `reporting_manager` (text, nullable)
+- `level` (text)
+- `location` (text)
+- `gender` (text, nullable)
+- `created_at`, `updated_at` (timestamps)
+
+#### `profiles`
+User profile information:
+- `id` (uuid, references auth.users)
+- `email` (text)
+- `full_name` (text, nullable)
+- `created_at`, `updated_at` (timestamps)
+
+#### `user_roles`
+Role-based access control:
+- `id` (uuid, primary key)
+- `user_id` (uuid, references auth.users)
+- `role` (enum: 'super_admin', 'admin', 'user')
+
+### Row Level Security (RLS)
+
+All tables have RLS policies enabled:
+- **Employees**: Authenticated users can view/insert/update; only super admins can delete
+- **Profiles**: Users can view all profiles and update their own
+- **User Roles**: Only super admins can manage roles
+
+## Excel Import Format
+
+The app supports importing employees via Excel files with these columns:
+
+| Column | Type | Required | Example |
+|--------|------|----------|---------|
+| Employee Number | Text | Yes | EMP001 |
+| Name | Text | Yes | John Doe |
+| Official Email | Email | Yes | john@company.com |
+| Mobile Number | Text | No | +91-9876543210 |
+| Personal Email | Email | No | john.doe@gmail.com |
+| Date of Joining | Date | Yes | 01-04-2024 |
+| Date of Exit | Date | No | 31-03-2025 |
+| Birthday | Date | No | 15-06-1990 |
+| Status | Text | No | Active |
+| Type | Text | No | EMP |
+| Pod | Text | Yes | Engineering |
+| Pod Lead | Text | No | Jane Smith |
+| Reporting Manager | Text | No | Jane Smith |
+| Level | Text | Yes | L3 |
+| Location | Text | Yes | Bangalore |
+| Gender | Text | No | Male |
+
+## Development
+
+### Project Structure
+
+```
+├── src/
+│   ├── components/          # React components
+│   │   ├── ui/             # shadcn/ui components
+│   │   ├── DashboardLayout.tsx
+│   │   ├── EmployeeImport.tsx
+│   │   └── ProtectedRoute.tsx
+│   ├── pages/              # Page components
+│   │   ├── Analytics.tsx
+│   │   ├── Auth.tsx
+│   │   ├── Employees.tsx
+│   │   └── Users.tsx
+│   ├── hooks/              # Custom React hooks
+│   │   └── useAuth.ts
+│   ├── integrations/       # API integrations
+│   │   └── supabase/
+│   ├── lib/                # Utility functions
+│   └── main.tsx            # App entry point
+├── supabase/
+│   ├── functions/          # Edge functions
+│   └── migrations/         # Database migrations
+└── public/                 # Static assets
 ```
 
-**Edit a file directly in GitHub**
+### Available Scripts
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
-**Use GitHub Codespaces**
+### Adding New Features
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. **Database changes**: Use Supabase migrations
+   ```bash
+   supabase migration new your_migration_name
+   ```
 
-## What technologies are used for this project?
+2. **New pages**: Add to `src/pages/` and update routing in `src/App.tsx`
 
-This project is built with:
+3. **UI components**: Use shadcn/ui or create custom components in `src/components/`
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Authentication Flow
 
-## How can I deploy this project?
+1. Users sign up/login via `/auth` page
+2. Sessions are persisted in localStorage
+3. Protected routes check authentication status
+4. User roles determine access to features (e.g., user management)
 
-Simply open [Lovable](https://lovable.dev/projects/ffae601c-469d-4b74-b123-4b2f23f14864) and click on Share -> Publish.
+## Analytics Calculations
 
-## Can I connect a custom domain to my Lovable project?
+### Attrition Rate
+```
+Attrition Rate = (Employees Who Left / Average Headcount) × 100
 
-Yes, you can!
+Where:
+- Employees Who Left = Count of employees with date_of_exit in period
+- Average Headcount = (Headcount at Start + Headcount at End) / 2
+- Default period = Current Financial Year (April 1 - March 31)
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Support
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Documentation**: [Lovable Docs](https://docs.lovable.dev)
+- **Issues**: Create an issue in this repository
+- **Community**: [Lovable Discord](https://discord.gg/lovable)
+
+## License
+
+MIT License - feel free to use this project for your organization!
+
+---
+
+Built with ❤️ using [Lovable](https://lovable.dev)
