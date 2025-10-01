@@ -32,6 +32,11 @@ const LEVEL_COLORS: Record<string, string> = {
 export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterChartProps) => {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
 
+  // Helper to normalize level format (N-1 -> N+1)
+  const normalizeLevel = (level: string) => {
+    return level.replace('N-', 'N+');
+  };
+
   const chartData = useMemo(() => {
     // Filter employees with salary data and sort by salary descending
     const employeesWithSalary = employees
@@ -41,13 +46,14 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
     // Convert to chart format with index and salary in lakhs (including EPF)
     return employeesWithSalary.map((emp, index) => {
       const totalCompensation = emp.salary + (emp.salary * 0.06); // Fixed + EPF
+      const normalizedLevel = normalizeLevel(emp.level);
       return {
         index: index,
         salary: totalCompensation / 100000, // Convert to lakhs
         name: emp.name,
-        level: emp.level,
+        level: normalizedLevel,
         originalSalary: emp.salary,
-        fill: LEVEL_COLORS[emp.level] || '#6B7280',
+        fill: LEVEL_COLORS[normalizedLevel] || '#6B7280',
       };
     });
   }, [employees]);
@@ -68,7 +74,8 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
   const levelStats = useMemo(() => {
     if (!selectedLevel) return null;
 
-    const range = salaryRanges.find(r => r.level === selectedLevel);
+    // Find range by normalizing the level format (database has N-1, we display N+1)
+    const range = salaryRanges.find(r => normalizeLevel(r.level) === selectedLevel);
     if (!range) return null;
 
     const levelEmployees = chartData.filter(emp => emp.level === selectedLevel);
@@ -150,9 +157,9 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
           <XAxis
             type="number"
             dataKey="index"
-            name="Employee Index"
+            name="Employees"
             domain={[0, chartData.length + 5]}
-            label={{ value: '', position: 'insideBottom', offset: -10 }}
+            label={{ value: 'Employees', position: 'insideBottom', offset: -10 }}
           />
           <YAxis
             type="number"
