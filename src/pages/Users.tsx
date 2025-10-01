@@ -75,41 +75,36 @@ const Users = () => {
     }
   };
 
-  const handleGrantAccess = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleInviteUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
+    const fullName = formData.get('fullName') as string;
+    const password = formData.get('password') as string;
 
     try {
-      // Find user by email
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .single();
-
-      if (profileError) {
-        toast({
-          title: 'Error',
-          description: 'User not found. They need to sign up first.',
-          variant: 'destructive'
-        });
-        return;
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Not authenticated');
       }
 
-      // Grant user role
-      const { error } = await supabase
-        .from('user_roles')
-        .insert([{ user_id: profile.id, role: 'user' }]);
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { email, fullName, password },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
 
       if (error) throw error;
 
       toast({
         title: 'Success',
-        description: 'Access granted successfully'
+        description: 'User invited successfully. They can now log in with the provided credentials.'
       });
 
       setIsDialogOpen(false);
+      e.currentTarget.reset();
       fetchUsers();
     } catch (error: any) {
       toast({
@@ -190,16 +185,16 @@ const Users = () => {
             <DialogTrigger asChild>
               <Button>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Grant Access
+                Invite User
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Grant User Access</DialogTitle>
+                <DialogTitle>Invite New User</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleGrantAccess} className="space-y-4">
+              <form onSubmit={handleInviteUser} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">User Email</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     name="email"
@@ -207,12 +202,32 @@ const Users = () => {
                     placeholder="user@example.com"
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Temporary Password</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="text"
+                    placeholder="Create a temporary password"
+                    required
+                  />
                   <p className="text-sm text-muted-foreground">
-                    User must have signed up first
+                    Share this password with the user securely
                   </p>
                 </div>
                 <Button type="submit" className="w-full">
-                  Grant Access
+                  Send Invite
                 </Button>
               </form>
             </DialogContent>
