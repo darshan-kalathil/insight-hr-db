@@ -13,6 +13,7 @@ interface SalaryRange {
   level: string;
   min_salary: number;
   max_salary: number;
+  variable_pay_percentage: number;
 }
 
 interface SalaryScatterChartProps {
@@ -110,11 +111,35 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const fixedSalary = data.originalSalary;
+      
+      // Get variable pay percentage for this level
+      const levelRange = salaryRanges.find(r => normalizeLevel(r.level) === data.level);
+      const variablePercentage = levelRange?.variable_pay_percentage || 0;
+      
+      // Calculate components
+      const epf = Math.round(fixedSalary * 0.06);
+      const variable = Math.round(fixedSalary * (variablePercentage / 100));
+      const ctc = fixedSalary + epf + variable;
+      
+      const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          maximumFractionDigits: 0
+        }).format(amount);
+      };
+      
       return (
-        <div className="bg-black text-white px-4 py-2 rounded-md shadow-lg">
-          <p className="font-semibold">{data.name}</p>
-          <p>Band: {data.level}</p>
-          <p>Salary: Rs. {(data.salary * 100000).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+        <div className="bg-black text-white px-4 py-3 rounded-md shadow-lg space-y-1">
+          <p className="font-bold text-lg">{data.name}</p>
+          <p className="text-sm">Band: {data.level}</p>
+          <div className="border-t border-gray-600 my-2 pt-2 space-y-1">
+            <p className="text-sm">Fixed Salary: {formatCurrency(fixedSalary)}</p>
+            <p className="text-sm">EPF (6%): {formatCurrency(epf)}</p>
+            <p className="text-sm">Variable ({variablePercentage}%): {formatCurrency(variable)}</p>
+            <p className="font-semibold border-t border-gray-600 pt-1 mt-1">CTC: {formatCurrency(ctc)}</p>
+          </div>
         </div>
       );
     }
