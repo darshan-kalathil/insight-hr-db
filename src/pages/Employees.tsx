@@ -7,8 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Pencil } from 'lucide-react';
+import { Plus, Search, Pencil, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { EmployeeImport } from '@/components/EmployeeImport';
@@ -34,8 +36,8 @@ const Employees = () => {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [levelFilter, setLevelFilter] = useState<string>('all');
-  const [podFilter, setPodFilter] = useState<string>('all');
+  const [levelFilter, setLevelFilter] = useState<string[]>([]);
+  const [podFilter, setPodFilter] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [genderFilter, setGenderFilter] = useState<string>('all');
   const { toast } = useToast();
@@ -145,8 +147,8 @@ const Employees = () => {
       emp.official_email.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || emp.status === statusFilter;
-    const matchesLevel = levelFilter === 'all' || emp.level === levelFilter;
-    const matchesPod = podFilter === 'all' || emp.pod === podFilter;
+    const matchesLevel = levelFilter.length === 0 || levelFilter.includes(emp.level);
+    const matchesPod = podFilter.length === 0 || podFilter.includes(emp.pod);
     const matchesLocation = locationFilter === 'all' || emp.location === locationFilter;
     const matchesGender = genderFilter === 'all' || (emp as any).gender === genderFilter;
 
@@ -288,29 +290,95 @@ const Employees = () => {
             </SelectContent>
           </Select>
 
-          <Select value={levelFilter} onValueChange={setLevelFilter}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
-              {uniqueLevels.map(level => (
-                <SelectItem key={level} value={level}>{level}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[160px] justify-between">
+                {levelFilter.length === 0 ? 'All Levels' : `${levelFilter.length} selected`}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-3">
+              <div className="space-y-2">
+                <div className="font-medium text-sm mb-2">Select Levels</div>
+                {uniqueLevels.map(level => (
+                  <div key={level} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`level-${level}`}
+                      checked={levelFilter.includes(level)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setLevelFilter([...levelFilter, level]);
+                        } else {
+                          setLevelFilter(levelFilter.filter(l => l !== level));
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`level-${level}`}
+                      className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {level}
+                    </label>
+                  </div>
+                ))}
+                {levelFilter.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => setLevelFilter([])}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
 
-          <Select value={podFilter} onValueChange={setPodFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="POD" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All PODs</SelectItem>
-              {uniquePods.map(pod => (
-                <SelectItem key={pod} value={pod}>{pod}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[180px] justify-between">
+                {podFilter.length === 0 ? 'All PODs' : `${podFilter.length} selected`}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[250px] p-3 max-h-[300px] overflow-y-auto">
+              <div className="space-y-2">
+                <div className="font-medium text-sm mb-2">Select PODs</div>
+                {uniquePods.map(pod => (
+                  <div key={pod} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`pod-${pod}`}
+                      checked={podFilter.includes(pod)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setPodFilter([...podFilter, pod]);
+                        } else {
+                          setPodFilter(podFilter.filter(p => p !== pod));
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`pod-${pod}`}
+                      className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {pod}
+                    </label>
+                  </div>
+                ))}
+                {podFilter.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => setPodFilter([])}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Select value={locationFilter} onValueChange={setLocationFilter}>
             <SelectTrigger className="w-[140px]">
