@@ -3,9 +3,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+
+// Get current financial year (April 1 to March 31)
+const getCurrentFinancialYear = () => {
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth(); // 0-indexed
+  
+  // If we're in Jan-Mar, financial year started last year
+  // If we're in Apr-Dec, financial year started this year
+  const fyStartYear = currentMonth < 3 ? currentYear - 1 : currentYear;
+  
+  return {
+    start: new Date(fyStartYear, 3, 1), // April 1
+    end: new Date(fyStartYear + 1, 2, 31) // March 31
+  };
+};
+
 const Analytics = () => {
   const [levelData, setLevelData] = useState<any[]>([]);
   const [podData, setPodData] = useState<any[]>([]);
@@ -13,12 +36,17 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [podFilter, setPodFilter] = useState<string>('all');
   const [uniquePods, setUniquePods] = useState<string[]>([]);
+  
+  const fy = getCurrentFinancialYear();
+  const [periodFrom, setPeriodFrom] = useState<Date>(fy.start);
+  const [periodTo, setPeriodTo] = useState<Date>(fy.end);
+  
   const {
     toast
   } = useToast();
   useEffect(() => {
     fetchAnalytics();
-  }, [podFilter]);
+  }, [podFilter, periodFrom, periodTo]);
   const fetchAnalytics = async () => {
     try {
       const {
@@ -55,16 +83,58 @@ const Analytics = () => {
         value
       })).sort((a: any, b: any) => b.value - a.value).slice(0, 10));
 
-      // Attrition analysis
+      // Attrition analysis with correct formula
       const activeCount = employees.filter((e: any) => e.status === 'Active' || e.status === 'Serving Notice Period').length;
       const inactiveCount = employees.filter((e: any) => e.status === 'Inactive').length;
       const noticeCount = employees.filter((e: any) => e.status === 'Serving Notice Period').length;
+      
+      // Employees who left during the period
+      const employeesWhoLeft = employees.filter((e: any) => {
+        if (!e.date_of_exit) return false;
+        const exitDate = new Date(e.date_of_exit);
+        return exitDate >= periodFrom && exitDate <= periodTo && e.status === 'Inactive';
+      }).length;
+      
+      // Headcount at start of period
+      const headcountAtStart = employees.filter((e: any) => {
+        const joinDate = new Date(e.doj);
+        if (joinDate > periodFrom) return false;
+        
+        // Either currently active or left after the start date
+        if (e.status === 'Active' || e.status === 'Serving Notice Period') return true;
+        if (e.date_of_exit) {
+          const exitDate = new Date(e.date_of_exit);
+          return exitDate > periodFrom;
+        }
+        return false;
+      }).length;
+      
+      // Headcount at end of period
+      const headcountAtEnd = employees.filter((e: any) => {
+        const joinDate = new Date(e.doj);
+        if (joinDate > periodTo) return false;
+        
+        // Either currently active or left after the end date
+        if (e.status === 'Active' || e.status === 'Serving Notice Period') return true;
+        if (e.date_of_exit) {
+          const exitDate = new Date(e.date_of_exit);
+          return exitDate > periodTo;
+        }
+        return false;
+      }).length;
+      
+      // Calculate average headcount and attrition rate
+      const averageHeadcount = (headcountAtStart + headcountAtEnd) / 2;
+      const attritionRate = averageHeadcount > 0 ? (employeesWhoLeft / averageHeadcount * 100).toFixed(2) : '0.00';
+      
       setAttritionData({
         total: employees.length,
         active: activeCount,
         inactive: inactiveCount,
         notice: noticeCount,
-        attritionRate: (inactiveCount / employees.length * 100).toFixed(2)
+        attritionRate,
+        employeesWhoLeft,
+        averageHeadcount: averageHeadcount.toFixed(0)
       });
     } catch (error: any) {
       toast({
@@ -85,7 +155,66 @@ const Analytics = () => {
   }
   return <DashboardLayout>
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">HR Analytics</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">HR Analytics</h1>
+          
+          {/* Date Range Selectors */}
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-sm text-muted-foreground">Period From</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[200px] justify-start text-left font-normal",
+                      !periodFrom && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {periodFrom ? format(periodFrom, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={periodFrom}
+                    onSelect={(date) => date && setPeriodFrom(date)}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="flex flex-col gap-1">
+              <span className="text-sm text-muted-foreground">Period To</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[200px] justify-start text-left font-normal",
+                      !periodTo && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {periodTo ? format(periodTo, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={periodTo}
+                    onSelect={(date) => date && setPeriodTo(date)}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </div>
 
         {/* Overview Cards */}
         <div className="grid gap-4 md:grid-cols-4">
@@ -111,6 +240,9 @@ const Analytics = () => {
             <CardHeader className="pb-2">
               <CardDescription>Attrition Rate</CardDescription>
               <CardTitle className="text-4xl">{attritionData.attritionRate}%</CardTitle>
+              <div className="text-xs text-muted-foreground mt-2">
+                {attritionData.employeesWhoLeft} left / Avg {attritionData.averageHeadcount} employees
+              </div>
             </CardHeader>
           </Card>
         </div>
