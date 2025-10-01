@@ -70,8 +70,6 @@ export const EmployeeImport = ({
             pod: row['POD'],
             pod_lead: row['POD Lead'] || null,
             reporting_manager: row['Reporting Manager'] || null,
-            secondary_reporting: row['Secondary Reporting'] || null,
-            final_travel_approval: row['Final Travel Approval'] || null,
             level: row['Level'],
             location: row['Location'],
             gender: row['Gender'] || null,

@@ -21,7 +21,6 @@ export type Database = {
           date_of_exit: string | null
           doj: string
           empl_no: string
-          final_travel_approval: string | null
           gender: string | null
           id: string
           level: string
@@ -33,7 +32,6 @@ export type Database = {
           pod: string
           pod_lead: string | null
           reporting_manager: string | null
-          secondary_reporting: string | null
           status: string
           type: string | null
           updated_at: string
@@ -44,7 +42,6 @@ export type Database = {
           date_of_exit?: string | null
           doj: string
           empl_no: string
-          final_travel_approval?: string | null
           gender?: string | null
           id?: string
           level: string
@@ -56,7 +53,6 @@ export type Database = {
           pod: string
           pod_lead?: string | null
           reporting_manager?: string | null
-          secondary_reporting?: string | null
           status?: string
           type?: string | null
           updated_at?: string
@@ -67,7 +63,6 @@ export type Database = {
           date_of_exit?: string | null
           doj?: string
           empl_no?: string
-          final_travel_approval?: string | null
           gender?: string | null
           id?: string
           level?: string
@@ -79,7 +74,6 @@ export type Database = {
           pod?: string
           pod_lead?: string | null
           reporting_manager?: string | null
-          secondary_reporting?: string | null
           status?: string
           type?: string | null
           updated_at?: string
