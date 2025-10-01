@@ -74,7 +74,7 @@ export const EmployeeImport = ({
             location: row['Location'],
             gender: row['Gender'] || null,
             type: row['Type'] || 'EMP',
-            salary: row['Fixed'] ? parseFloat(row['Fixed']) : null,
+            salary: row['Fixed Salary'] ? parseFloat(row['Fixed Salary']) : null,
             doj: parseDate(row['DOJ']),
             date_of_exit: parseDate(row['Date of Exit']),
             birthday: parseDate(row['Birthday'])
