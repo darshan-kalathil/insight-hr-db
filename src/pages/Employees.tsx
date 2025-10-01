@@ -211,11 +211,11 @@ const Employees = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="personal_email">Personal Email</Label>
-                      <Input id="personal_email" name="personal_email" type="email" />
+                      <Input id="personal_email" name="personal_email" type="email" defaultValue={(editingEmployee as any)?.personal_email} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="mobile_number">Mobile Number</Label>
-                      <Input id="mobile_number" name="mobile_number" />
+                      <Input id="mobile_number" name="mobile_number" defaultValue={(editingEmployee as any)?.mobile_number} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="pod">POD/Department*</Label>
@@ -223,7 +223,7 @@ const Employees = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="pod_lead">POD Lead</Label>
-                      <Input id="pod_lead" name="pod_lead" />
+                      <Input id="pod_lead" name="pod_lead" defaultValue={(editingEmployee as any)?.pod_lead} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="reporting_manager">Reporting Manager*</Label>
@@ -247,7 +247,7 @@ const Employees = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="gender">Gender</Label>
-                      <Select name="gender">
+                      <Select name="gender" defaultValue={(editingEmployee as any)?.gender}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
