@@ -70,6 +70,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (createError) {
       console.error('Error creating user:', createError);
+      
+      // Handle specific error cases with user-friendly messages
+      if (createError.message.includes('already been registered')) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'This email address is already registered in the system. Please use a different email or check the existing users list.' 
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          }
+        );
+      }
+      
       throw createError;
     }
 
