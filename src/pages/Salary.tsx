@@ -73,15 +73,11 @@ const Salary = () => {
     }).format(amount);
   };
 
-  const calculateTotalCompensation = (salary: number, level: string) => {
-    const range = salaryRanges.find(r => r.level === level);
-    if (!range) return { variable: 0, epf: 0, total: salary };
-
-    const variable = salary * (range.variable_pay_percentage / 100);
+  const calculateTotalCompensation = (salary: number) => {
     const epf = salary * 0.06;
-    const total = salary + variable + epf;
+    const total = salary + epf;
 
-    return { variable, epf, total };
+    return { epf, total };
   };
 
   if (loading) {
@@ -167,7 +163,7 @@ const Salary = () => {
                 if (!range) return null;
 
                 const position = getEmployeePosition(employee.salary, employee.level);
-                const comp = calculateTotalCompensation(employee.salary, employee.level);
+                const comp = calculateTotalCompensation(employee.salary);
 
                 return (
                   <div key={employee.name} className="space-y-2">
@@ -199,14 +195,10 @@ const Salary = () => {
                     </div>
 
                     {/* Compensation Breakdown */}
-                    <div className="grid grid-cols-4 gap-2 pt-2 text-sm">
+                    <div className="grid grid-cols-3 gap-2 pt-2 text-sm">
                       <div className="bg-muted/50 p-2 rounded">
                         <p className="text-xs text-muted-foreground">Fixed</p>
                         <p className="font-medium">{formatCurrency(employee.salary)}</p>
-                      </div>
-                      <div className="bg-muted/50 p-2 rounded">
-                        <p className="text-xs text-muted-foreground">Variable ({range.variable_pay_percentage}%)</p>
-                        <p className="font-medium">{formatCurrency(comp.variable)}</p>
                       </div>
                       <div className="bg-muted/50 p-2 rounded">
                         <p className="text-xs text-muted-foreground">EPF (6%)</p>
