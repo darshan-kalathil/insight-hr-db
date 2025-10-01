@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
@@ -10,12 +11,14 @@ const Analytics = () => {
   const [podData, setPodData] = useState<any[]>([]);
   const [attritionData, setAttritionData] = useState<any>({});
   const [loading, setLoading] = useState(true);
+  const [podFilter, setPodFilter] = useState<string>('all');
+  const [uniquePods, setUniquePods] = useState<string[]>([]);
   const {
     toast
   } = useToast();
   useEffect(() => {
     fetchAnalytics();
-  }, []);
+  }, [podFilter]);
   const fetchAnalytics = async () => {
     try {
       const {
@@ -27,8 +30,13 @@ const Analytics = () => {
       // Filter active employees for charts
       const activeEmployees = employees.filter((e: any) => e.status === 'Active' || e.status === 'Serving Notice Period');
 
-      // Level distribution (active employees only)
-      const levelCounts = activeEmployees.reduce((acc: any, emp: any) => {
+      // Get unique pods for filter
+      const pods = [...new Set(activeEmployees.map((e: any) => e.pod))].sort();
+      setUniquePods(pods);
+
+      // Level distribution (active employees only, filtered by pod if selected)
+      const filteredForLevel = podFilter === 'all' ? activeEmployees : activeEmployees.filter((e: any) => e.pod === podFilter);
+      const levelCounts = filteredForLevel.reduce((acc: any, emp: any) => {
         acc[emp.level] = (acc[emp.level] || 0) + 1;
         return acc;
       }, {});
@@ -113,6 +121,19 @@ const Analytics = () => {
             <CardHeader>
               <CardTitle>Level Distribution</CardTitle>
               <CardDescription>Employee distribution across levels</CardDescription>
+              <div className="mt-4">
+                <Select value={podFilter} onValueChange={setPodFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by POD" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All PODs</SelectItem>
+                    {uniquePods.map(pod => (
+                      <SelectItem key={pod} value={pod}>{pod}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -140,7 +161,7 @@ const Analytics = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip formatter={(value) => [value, 'Count']} />
                   <Bar dataKey="value" fill="hsl(var(--primary))" />
                 </BarChart>
               </ResponsiveContainer>
