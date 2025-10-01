@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
@@ -218,6 +218,25 @@ const Analytics = () => {
             </CardHeader>
           </Card>
         </div>
+
+        {/* Salary Features Card */}
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Salary Visualization & Management
+            </CardTitle>
+            <CardDescription>
+              Analyze salary distribution, view interactive scatter charts with Fixed/Fixed+EPF/CTC modes, 
+              and manage salary ranges for each level with variable pay percentages.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => window.location.href = '/salary'}>
+              View Salary Analytics
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Charts */}
         <div className="grid gap-4 md:grid-cols-2">
