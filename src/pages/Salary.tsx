@@ -4,8 +4,10 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SalaryScatterChart } from '@/components/SalaryScatterChart';
+import { SalaryRangesTable } from '@/components/SalaryRangesTable';
 
 type SalaryRange = {
+  id: string;
   level: string;
   min_salary: number;
   max_salary: number;
@@ -31,7 +33,7 @@ const Salary = () => {
   const fetchData = async () => {
     try {
       const [rangesResult, employeesResult] = await Promise.all([
-        supabase.from('salary_ranges').select('*').order('min_salary', { ascending: false }),
+        supabase.from('salary_ranges').select('id, level, min_salary, max_salary, variable_pay_percentage').order('min_salary', { ascending: false }),
         supabase.from('employees').select('id, name, level, salary').eq('status', 'Active').not('salary', 'is', null)
       ]);
 
@@ -62,7 +64,10 @@ const Salary = () => {
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : (
-          <SalaryScatterChart employees={employees} salaryRanges={salaryRanges} />
+          <div className="space-y-8">
+            <SalaryScatterChart employees={employees} salaryRanges={salaryRanges} />
+            <SalaryRangesTable salaryRanges={salaryRanges} onUpdate={fetchData} />
+          </div>
         )}
       </div>
     </DashboardLayout>
