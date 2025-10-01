@@ -35,6 +35,7 @@ const Employees = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>('Active');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [levelFilter, setLevelFilter] = useState<string[]>([]);
   const [podFilter, setPodFilter] = useState<string[]>([]);
@@ -85,10 +86,23 @@ const Employees = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    const status = formData.get('status') as string;
+    const dateOfExit = formData.get('date_of_exit') as string;
+
+    // Validation: If status is "Serving Notice Period", date_of_exit is required
+    if (status === 'Serving Notice Period' && !dateOfExit) {
+      toast({
+        title: 'Validation Error',
+        description: 'Date of Exit is required when status is "Serving Notice Period"',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     const employeeData = {
       empl_no: formData.get('empl_no') as string,
       name: formData.get('name') as string,
-      status: formData.get('status') as string,
+      status: status,
       official_email: formData.get('official_email') as string,
       personal_email: formData.get('personal_email') as string || null,
       mobile_number: formData.get('mobile_number') as string,
@@ -98,6 +112,7 @@ const Employees = () => {
       level: formData.get('level') as string,
       salary: formData.get('salary') ? parseFloat(formData.get('salary') as string) : null,
       doj: formData.get('doj') as string,
+      date_of_exit: dateOfExit || null,
       location: formData.get('location') as string,
       gender: formData.get('gender') as string,
       birthday: formData.get('birthday') as string
@@ -171,7 +186,10 @@ const Employees = () => {
           <div className="flex gap-2">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => setEditingEmployee(null)}>
+                <Button onClick={() => {
+                  setEditingEmployee(null);
+                  setSelectedStatus('Active');
+                }}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Employee
                 </Button>
@@ -194,7 +212,12 @@ const Employees = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="status">Status*</Label>
-                      <Select name="status" defaultValue={editingEmployee?.status || 'Active'} required>
+                      <Select 
+                        name="status" 
+                        defaultValue={editingEmployee?.status || 'Active'} 
+                        onValueChange={setSelectedStatus}
+                        required
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -240,6 +263,18 @@ const Employees = () => {
                     <div className="space-y-2">
                       <Label htmlFor="doj">Date of Joining*</Label>
                       <Input id="doj" name="doj" type="date" defaultValue={editingEmployee?.doj} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="date_of_exit">
+                        Date of Exit{selectedStatus === 'Serving Notice Period' && '*'}
+                      </Label>
+                      <Input 
+                        id="date_of_exit" 
+                        name="date_of_exit" 
+                        type="date" 
+                        defaultValue={(editingEmployee as any)?.date_of_exit} 
+                        required={selectedStatus === 'Serving Notice Period'}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="location">Location*</Label>

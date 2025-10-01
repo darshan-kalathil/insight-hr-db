@@ -2,3 +2,6 @@ project_id = "jhuoievjanptywbkwvcv"
 
 [functions.invite-user]
 verify_jwt = true
+
+[functions.update-employee-status]
+verify_jwt = false
