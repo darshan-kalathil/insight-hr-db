@@ -14,6 +14,7 @@ import { Plus, Search, Pencil, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { EmployeeImport } from '@/components/EmployeeImport';
+import { formatIndianCurrency } from '@/lib/utils';
 
 type Employee = {
   id: string;
@@ -425,6 +426,7 @@ const Employees = () => {
                 <TableHead>POD</TableHead>
                 <TableHead>Manager</TableHead>
                 <TableHead>Level</TableHead>
+                <TableHead>Fixed Salary</TableHead>
                 <TableHead>DOJ</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Actions</TableHead>
@@ -433,13 +435,13 @@ const Employees = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center">
+                  <TableCell colSpan={11} className="text-center">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : filteredEmployees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center">
+                  <TableCell colSpan={11} className="text-center">
                     No employees found
                   </TableCell>
                 </TableRow>
@@ -453,6 +455,9 @@ const Employees = () => {
                     <TableCell>{employee.pod}</TableCell>
                     <TableCell>{employee.reporting_manager}</TableCell>
                     <TableCell>{employee.level}</TableCell>
+                    <TableCell className="font-medium">
+                      {(employee as any).salary ? formatIndianCurrency((employee as any).salary) : '-'}
+                    </TableCell>
                     <TableCell>{format(new Date(employee.doj), 'dd/MM/yyyy')}</TableCell>
                     <TableCell>{employee.location}</TableCell>
                     <TableCell>

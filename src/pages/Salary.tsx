@@ -74,7 +74,7 @@ const Salary = () => {
   };
 
   const calculateTotalCompensation = (salary: number) => {
-    const epf = salary * 0.06;
+    const epf = Math.round(salary * 0.06);
     const total = salary + epf;
 
     return { epf, total };
