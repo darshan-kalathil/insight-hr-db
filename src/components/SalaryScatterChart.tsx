@@ -21,12 +21,12 @@ interface SalaryScatterChartProps {
 }
 
 const LEVEL_COLORS: Record<string, string> = {
-  'N-1': '#F59E0B', // Yellow
-  'N-2': '#A855F7', // Purple
-  'N-3': '#000000', // Black
-  'N-4': '#10B981', // Green
-  'N-5': '#3B82F6', // Blue
-  'N-6': '#EF4444', // Red
+  'N+1': '#F59E0B', // Yellow
+  'N+2': '#A855F7', // Purple
+  'N+3': '#000000', // Black
+  'N+4': '#10B981', // Green
+  'N+5': '#3B82F6', // Blue
+  'N+6': '#EF4444', // Red
 };
 
 export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterChartProps) => {
@@ -121,7 +121,7 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
   return (
     <Card className="p-6">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-4">Band Colors (Click dots to show ranges):</h3>
+        <h3 className="text-lg font-semibold mb-4">Levels (Click dots to show ranges):</h3>
         <div className="flex flex-wrap gap-4 justify-center">
           {Object.entries(LEVEL_COLORS).map(([level, color]) => (
             <button
