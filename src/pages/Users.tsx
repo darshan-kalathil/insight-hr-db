@@ -22,6 +22,10 @@ const Users = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -163,6 +167,58 @@ const Users = () => {
     }
   };
 
+  const handleDeleteUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userToDelete || !deletePassword || !user) return;
+
+    setIsDeleting(true);
+    try {
+      // Verify password by attempting to sign in
+      const { error: passwordError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: deletePassword
+      });
+
+      if (passwordError) {
+        throw new Error('Incorrect password');
+      }
+
+      // Password verified, proceed with deletion
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: userToDelete },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'User permanently deleted. The email can now be reused.'
+      });
+
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
+      setDeletePassword('');
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!isSuperAdmin && !loading) {
     return (
       <DashboardLayout>
@@ -293,13 +349,23 @@ const Users = () => {
                         {user.roles.length > 0 && user.roles.map((role) => (
                           <Button
                             key={role}
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
                             onClick={() => handleRevokeRole(user.id, role as 'super_admin' | 'user')}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            Revoke {role === 'super_admin' ? 'Admin' : 'User'}
                           </Button>
                         ))}
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setUserToDelete(user.id);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -308,6 +374,52 @@ const Users = () => {
             </TableBody>
           </Table>
         </div>
+
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm User Deletion</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleDeleteUser} className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                This will permanently delete the user. The email address will be freed and can be reused.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="deletePassword">Enter your password to confirm</Label>
+                <Input
+                  id="deletePassword"
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Your password"
+                  required
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setIsDeleteDialogOpen(false);
+                    setUserToDelete(null);
+                    setDeletePassword('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="destructive"
+                  className="flex-1"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete User'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
