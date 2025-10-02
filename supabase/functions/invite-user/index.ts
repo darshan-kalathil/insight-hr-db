@@ -72,10 +72,11 @@ const handler = async (req: Request): Promise<Response> => {
       console.error('Error creating user:', createError);
       
       // Handle specific error cases with user-friendly messages
-      if (createError.message.includes('already been registered')) {
+      if (createError.message.includes('already been registered') || 
+          (createError as any).code === 'email_exists') {
         return new Response(
           JSON.stringify({ 
-            error: 'This email address is already registered in the system. Please use a different email or check the existing users list.' 
+            error: 'This email address is already in use. The user may have been previously deleted but is still in the system. Please contact support or use a different email address.' 
           }),
           {
             status: 400,
@@ -84,7 +85,13 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
       
-      throw createError;
+      return new Response(
+        JSON.stringify({ error: createError.message || 'Failed to create user' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
     }
 
     console.log('User created successfully:', newUser.user.id);
