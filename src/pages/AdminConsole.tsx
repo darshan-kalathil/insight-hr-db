@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Shield, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { logActivity } from '@/lib/activityLogger';
+import { ActivityLogs } from '@/components/ActivityLogs';
 
 type UserWithRole = {
   id: string;
@@ -18,7 +20,7 @@ type UserWithRole = {
   roles: string[];
 };
 
-const Users = () => {
+const AdminConsole = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -102,6 +104,14 @@ const Users = () => {
 
       if (error) throw error;
 
+      // Log the invite activity
+      await logActivity({
+        actionType: 'create',
+        entityType: 'user',
+        entityId: data.userId,
+        description: `Invited user: ${email}`
+      });
+
       toast({
         title: 'Success',
         description: 'User invited successfully. They can now log in with the provided credentials.'
@@ -127,6 +137,15 @@ const Users = () => {
 
       if (error) throw error;
 
+      // Get user email for logging
+      const user = users.find(u => u.id === userId);
+      await logActivity({
+        actionType: 'update',
+        entityType: 'user',
+        entityId: userId,
+        description: `Assigned super_admin role to user: ${user?.email}`
+      });
+
       toast({
         title: 'Success',
         description: 'Super admin privileges granted'
@@ -151,6 +170,15 @@ const Users = () => {
         .eq('role', role);
 
       if (error) throw error;
+
+      // Get user email for logging
+      const user = users.find(u => u.id === userId);
+      await logActivity({
+        actionType: 'update',
+        entityType: 'user',
+        entityId: userId,
+        description: `Revoked ${role} role from user: ${user?.email}`
+      });
 
       toast({
         title: 'Success',
@@ -199,6 +227,15 @@ const Users = () => {
 
       if (error) throw error;
 
+      // Get user email for logging
+      const deletedUser = users.find(u => u.id === userToDelete);
+      await logActivity({
+        actionType: 'delete',
+        entityType: 'user',
+        entityId: userToDelete,
+        description: `Deleted user: ${deletedUser?.email}`
+      });
+
       toast({
         title: 'Success',
         description: 'User permanently deleted. The email can now be reused.'
@@ -236,7 +273,7 @@ const Users = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">User Management</h1>
+          <h1 className="text-3xl font-bold">Admin Console</h1>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -420,9 +457,14 @@ const Users = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Activity Logs Section */}
+        <div className="mt-8 pt-8 border-t">
+          <ActivityLogs />
+        </div>
       </div>
     </DashboardLayout>
   );
 };
 
-export default Users;
+export default AdminConsole;

@@ -32,7 +32,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { path: '/', icon: Users, label: 'Employees' },
     { path: '/analytics', icon: BarChart3, label: 'Analytics' },
     { path: '/salary', icon: DollarSign, label: 'Salary' },
-    { path: '/users', icon: Settings, label: 'User Management' }
+    { path: '/users', icon: Settings, label: 'Admin Console' }
   ];
 
   return (

@@ -14,6 +14,7 @@ import { Plus, Search, Pencil, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { EmployeeImport } from '@/components/EmployeeImport';
+import { logActivity } from '@/lib/activityLogger';
 
 type Employee = {
   id: string;
@@ -127,16 +128,34 @@ const Employees = () => {
 
         if (error) throw error;
         
+        // Log the update activity
+        await logActivity({
+          actionType: 'update',
+          entityType: 'employee',
+          entityId: editingEmployee.id,
+          description: `Updated employee: ${employeeData.name}`
+        });
+        
         toast({
           title: 'Success',
           description: 'Employee updated successfully'
         });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('employees')
-          .insert([employeeData]);
+          .insert([employeeData])
+          .select()
+          .single();
 
         if (error) throw error;
+        
+        // Log the create activity
+        await logActivity({
+          actionType: 'create',
+          entityType: 'employee',
+          entityId: data.id,
+          description: `Created employee: ${employeeData.name}`
+        });
         
         toast({
           title: 'Success',
