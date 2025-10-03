@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { logActivity } from '@/lib/activityLogger';
+import { LeaveAnalytics } from '@/components/LeaveAnalytics';
+import { RegularizationAnalytics } from '@/components/RegularizationAnalytics';
 
 type ParseResult = {
   total: number;
@@ -364,20 +366,23 @@ const LeaveAttendance = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="leave" className="space-y-4">
+        <Tabs defaultValue="uploads" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="leave">Leave Records</TabsTrigger>
-            <TabsTrigger value="attendance">Attendance Regularization</TabsTrigger>
+            <TabsTrigger value="uploads">Uploads</TabsTrigger>
+            <TabsTrigger value="leave-analytics">Leave Analytics</TabsTrigger>
+            <TabsTrigger value="regularization-analytics">Regularization Analytics</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="leave" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload Leave Data</CardTitle>
-                <CardDescription>
-                  Upload the Leave_View Excel file. Cancelled leaves will be automatically skipped.
-                </CardDescription>
-              </CardHeader>
+          <TabsContent value="uploads" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Leave Records Upload */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upload Leave Data</CardTitle>
+                  <CardDescription>
+                    Upload the Leave_View Excel file. Cancelled leaves will be automatically skipped.
+                  </CardDescription>
+                </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <input
@@ -434,17 +439,16 @@ const LeaveAttendance = () => {
                   </div>
                 )}
               </CardContent>
-            </Card>
-          </TabsContent>
+              </Card>
 
-          <TabsContent value="attendance" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload Attendance Regularization Data</CardTitle>
-                <CardDescription>
-                  Upload the Attendance_Regularization_Request Excel file. Cancelled requests will be automatically skipped.
-                </CardDescription>
-              </CardHeader>
+              {/* Attendance Regularization Upload */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upload Attendance Regularization Data</CardTitle>
+                  <CardDescription>
+                    Upload the Attendance_Regularization_Request Excel file. Cancelled requests will be automatically skipped.
+                  </CardDescription>
+                </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <input
@@ -501,7 +505,16 @@ const LeaveAttendance = () => {
                   </div>
                 )}
               </CardContent>
-            </Card>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="leave-analytics">
+            <LeaveAnalytics />
+          </TabsContent>
+
+          <TabsContent value="regularization-analytics">
+            <RegularizationAnalytics />
           </TabsContent>
         </Tabs>
       </div>
