@@ -86,6 +86,12 @@ const LeaveAttendance = () => {
         data: []
       };
 
+      // Log available columns for debugging
+      if (jsonData.length > 0) {
+        const sampleRow = jsonData[0] as any;
+        console.log('Available columns in Leave file:', Object.keys(sampleRow));
+      }
+
       for (const row of jsonData as any[]) {
         try {
           const approvalStatus = row['Approval Status']?.toString().trim();
@@ -96,13 +102,22 @@ const LeaveAttendance = () => {
             continue;
           }
 
-          // Extract employee number from "Name ONDC-E-XXX" format
-          const employeeIdRaw = row['Employee ID']?.toString();
-          const employeeMatch = employeeIdRaw?.match(/ONDC-E-\d+/);
+          // Try multiple possible column names for Employee ID
+          const employeeIdRaw = row['Employee ID'] || row['Employee Id'] || row['employee_id'] || row['EmployeeID'];
+          
+          if (!employeeIdRaw) {
+            results.errors++;
+            results.errorDetails.push(`Missing Employee ID field. Available fields: ${Object.keys(row).join(', ')}`);
+            continue;
+          }
+
+          // Extract employee number from "Name ONDC-E-XXX" format or direct "ONDC-E-XXX" format
+          const employeeIdStr = employeeIdRaw.toString();
+          const employeeMatch = employeeIdStr.match(/ONDC-E-\d+/);
           
           if (!employeeMatch) {
             results.errors++;
-            results.errorDetails.push(`Could not extract employee number from: ${employeeIdRaw}`);
+            results.errorDetails.push(`Could not extract employee number from: ${employeeIdStr}`);
             continue;
           }
 
@@ -213,6 +228,12 @@ const LeaveAttendance = () => {
         data: []
       };
 
+      // Log available columns for debugging
+      if (jsonData.length > 0) {
+        const sampleRow = jsonData[0] as any;
+        console.log('Available columns in Attendance file:', Object.keys(sampleRow));
+      }
+
       for (const row of jsonData as any[]) {
         try {
           const approvalStatus = row['Approval Status']?.toString().trim();
@@ -223,14 +244,25 @@ const LeaveAttendance = () => {
             continue;
           }
 
-          // Extract employee number directly (already in "ONDC-E-XXX" format)
-          const employeeNumber = row['Employee ID']?.toString().trim();
+          // Try multiple possible column names for Employee ID
+          const employeeIdRaw = row['Employee ID'] || row['Employee Id'] || row['employee_id'] || row['EmployeeID'];
           
-          if (!employeeNumber || !employeeNumber.startsWith('ONDC-E-')) {
+          if (!employeeIdRaw) {
             results.errors++;
-            results.errorDetails.push(`Invalid employee number: ${employeeNumber}`);
+            results.errorDetails.push(`Missing Employee ID field. Available fields: ${Object.keys(row).join(', ')}`);
             continue;
           }
+
+          const employeeIdStr = employeeIdRaw.toString().trim();
+          const employeeMatch = employeeIdStr.match(/ONDC-E-\d+/);
+          
+          if (!employeeMatch) {
+            results.errors++;
+            results.errorDetails.push(`Could not extract employee number from: ${employeeIdStr}`);
+            continue;
+          }
+          
+          const employeeNumber = employeeMatch[0];
 
           const attendanceRecord = {
             employee_number: employeeNumber,
