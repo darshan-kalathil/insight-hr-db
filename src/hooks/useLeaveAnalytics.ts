@@ -17,7 +17,8 @@ export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveTypes?:
       if (endDate) {
         query = query.lte('to_date', format(endDate, 'yyyy-MM-dd'));
       }
-      if (leaveTypes && leaveTypes.length > 0) {
+      // Only filter by leave types if "All Leaves" is not selected
+      if (leaveTypes && leaveTypes.length > 0 && !leaveTypes.includes('All Leaves')) {
         query = query.in('leave_type', leaveTypes);
       }
 
@@ -41,6 +42,8 @@ export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveTypes?:
 
       // Monthly trends by leave type
       const monthlyDataByType: Record<string, Record<string, number>> = {};
+      const monthlyTotals: Record<string, number> = {};
+      
       leaves?.forEach(leave => {
         const month = format(new Date(leave.from_date), 'MMM yyyy');
         const type = leave.leave_type || 'Unknown';
@@ -48,6 +51,9 @@ export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveTypes?:
           monthlyDataByType[month] = {};
         }
         monthlyDataByType[month][type] = (monthlyDataByType[month][type] || 0) + 1;
+        
+        // Track monthly totals for "All Leaves"
+        monthlyTotals[month] = (monthlyTotals[month] || 0) + 1;
       });
 
       // Convert to array format for recharts
@@ -55,7 +61,8 @@ export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveTypes?:
         .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
         .map(([month, types]) => ({
           month,
-          ...types
+          ...types,
+          'All Leaves': monthlyTotals[month] || 0
         }));
 
       // Date range

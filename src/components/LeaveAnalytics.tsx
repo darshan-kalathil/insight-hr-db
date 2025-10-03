@@ -11,6 +11,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { cn, getCurrentFinancialYear } from '@/lib/utils';
 
 const LEAVE_TYPES = [
+  'All Leaves',
   'Sick Leave',
   'Casual Leave',
   'Earned Leave',
@@ -20,6 +21,7 @@ const LEAVE_TYPES = [
 ];
 
 const LEAVE_TYPE_COLORS: Record<string, string> = {
+  'All Leaves': '262 83% 58%', // Purple
   'Earned Leave': '217 91% 60%', // Blue
   'Sick Leave': '0 84% 60%', // Red
   'Casual Leave': '142 76% 36%', // Green
@@ -32,7 +34,7 @@ export const LeaveAnalytics = () => {
   const financialYear = getCurrentFinancialYear();
   const [startDate, setStartDate] = useState<Date>(financialYear.startDate);
   const [endDate, setEndDate] = useState<Date>(financialYear.endDate);
-  const [selectedLeaveTypes, setSelectedLeaveTypes] = useState<string[]>([]);
+  const [selectedLeaveTypes, setSelectedLeaveTypes] = useState<string[]>(['All Leaves']);
 
   const { data: analytics, isLoading } = useLeaveAnalytics(startDate, endDate, selectedLeaveTypes.length > 0 ? selectedLeaveTypes : undefined);
 
@@ -106,9 +108,9 @@ export const LeaveAnalytics = () => {
             const fy = getCurrentFinancialYear();
             setStartDate(fy.startDate);
             setEndDate(fy.endDate);
-            setSelectedLeaveTypes([]);
+            setSelectedLeaveTypes(['All Leaves']);
           }}>
-            Clear filters
+            Reset filters
           </Button>
         </CardContent>
       </Card>
