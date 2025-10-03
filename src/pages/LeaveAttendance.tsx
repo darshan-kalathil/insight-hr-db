@@ -123,11 +123,11 @@ const LeaveAttendance = () => {
 
           const leaveRecord = {
             employee_number: employeeMatch[0],
-            leave_type: row['Leave Type'],
-            from_date: parseDate(row['From Date']),
-            to_date: parseDate(row['To Date']),
-            days_taken: parseFloat(row['No. of Days/Hours taken']) || 0,
-            reason: row['Reason']?.toString() || null,
+            leave_type: row['Leave type'],
+            from_date: parseDate(row['From']),
+            to_date: parseDate(row['To']),
+            days_taken: parseFloat(row['Days/Hours Taken']) || 0,
+            reason: row['Reason for leave']?.toString() || null,
             approval_status: approvalStatus,
             approver_name: row['Approver Name']?.toString() || null,
             approval_time: row['Approval time'] ? parseDate(row['Approval time']) : null,
