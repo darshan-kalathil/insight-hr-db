@@ -19,14 +19,14 @@ const LEAVE_TYPES = [
   'Bereavement Leave'
 ];
 
-const COLORS = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  'hsl(var(--destructive))'
-];
+const LEAVE_TYPE_COLORS: Record<string, string> = {
+  'Earned Leave': '217 91% 60%', // Blue
+  'Sick Leave': '0 84% 60%', // Red
+  'Casual Leave': '142 76% 36%', // Green
+  'Compensatory Off': '45 93% 47%', // Yellow
+  'Paternity Leave': '330 81% 60%', // Pink
+  'Bereavement Leave': '0 0% 0%', // Black
+};
 
 export const LeaveAnalytics = () => {
   const financialYear = getCurrentFinancialYear();
@@ -127,15 +127,17 @@ export const LeaveAnalytics = () => {
                 <YAxis className="text-xs" />
                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
                 <Legend />
-                {selectedLeaveTypes.map((type, index) => (
+                {selectedLeaveTypes.map((type) => (
                   <Line 
                     key={type}
                     type="monotone" 
                     dataKey={type} 
-                    stroke={COLORS[index % COLORS.length]} 
+                    stroke={`hsl(${LEAVE_TYPE_COLORS[type] || '217 91% 60%'})`}
                     strokeWidth={2} 
                     name={type}
                     connectNulls
+                    dot={{ fill: `hsl(${LEAVE_TYPE_COLORS[type] || '217 91% 60%'})`, r: 4 }}
+                    activeDot={{ r: 6 }}
                   />
                 ))}
               </LineChart>
