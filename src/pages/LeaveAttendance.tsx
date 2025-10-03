@@ -219,7 +219,8 @@ const LeaveAttendance = () => {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      // Skip first 2 rows, headers are on row 3 (range starts from 2)
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 2 });
 
       const results: ParseResult = {
         total: jsonData.length,
