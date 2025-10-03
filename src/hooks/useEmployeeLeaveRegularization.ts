@@ -63,51 +63,40 @@ export const useEmployeeLeaveRegularization = (
       const { data: regularizations, error: regError } = await regQuery;
       if (regError) throw regError;
 
-      // Process monthly data
-      const monthlyData: Record<string, {
-        leaveDays: number;
-        regularizationDays: number;
-        leaveTypes: Record<string, number>;
-        regularizationReasons: Record<string, number>;
-      }> = {};
+      // Process monthly data - structure by month and type
+      const monthlyData: Record<string, Record<string, number>> = {};
 
       // Get unique leave and regularization types
       const allLeaveTypes = new Set<string>();
       const allRegReasons = new Set<string>();
 
-      // Process leaves - sum number of days
+      // Process leaves - sum number of days per type
       leaves?.forEach(leave => {
         const month = format(new Date(leave.from_date), 'MMM yyyy');
         if (!monthlyData[month]) {
-          monthlyData[month] = {
-            leaveDays: 0,
-            regularizationDays: 0,
-            leaveTypes: {},
-            regularizationReasons: {}
-          };
+          monthlyData[month] = {};
         }
         const days = Number(leave.number_of_days) || 0;
-        monthlyData[month].leaveDays += days;
         const type = leave.leave_type || 'Unknown';
         allLeaveTypes.add(type);
-        monthlyData[month].leaveTypes[type] = (monthlyData[month].leaveTypes[type] || 0) + days;
+        monthlyData[month][type] = (monthlyData[month][type] || 0) + days;
+        
+        // Also track total leaves for default view
+        monthlyData[month]['Total Leaves'] = (monthlyData[month]['Total Leaves'] || 0) + days;
       });
 
-      // Process regularizations - each is 1 day
+      // Process regularizations - each is 1 day per reason
       regularizations?.forEach(reg => {
         const month = format(new Date(reg.attendance_date), 'MMM yyyy');
         if (!monthlyData[month]) {
-          monthlyData[month] = {
-            leaveDays: 0,
-            regularizationDays: 0,
-            leaveTypes: {},
-            regularizationReasons: {}
-          };
+          monthlyData[month] = {};
         }
-        monthlyData[month].regularizationDays += 1;
-        const reason = reg.reason || 'Unknown';
+        const reason = `reg_${reg.reason || 'Unknown'}`;
         allRegReasons.add(reason);
-        monthlyData[month].regularizationReasons[reason] = (monthlyData[month].regularizationReasons[reason] || 0) + 1;
+        monthlyData[month][reason] = (monthlyData[month][reason] || 0) + 1;
+        
+        // Also track total regularizations for default view
+        monthlyData[month]['Total Regularizations'] = (monthlyData[month]['Total Regularizations'] || 0) + 1;
       });
 
       // Convert to array format for recharts
@@ -115,10 +104,7 @@ export const useEmployeeLeaveRegularization = (
         .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
         .map(([month, data]) => ({
           month,
-          leaveDays: data.leaveDays,
-          regularizationDays: data.regularizationDays,
-          leaveTypes: data.leaveTypes,
-          regularizationReasons: data.regularizationReasons
+          ...data
         }));
 
       return {

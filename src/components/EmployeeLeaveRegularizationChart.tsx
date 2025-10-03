@@ -52,40 +52,43 @@ export const EmployeeLeaveRegularizationChart = () => {
     return (
       <div className="bg-card border border-border rounded-lg shadow-lg p-4">
         <p className="font-semibold mb-2">{data.month}</p>
-        
-        {/* Leave breakdown */}
-        <div className="mb-3">
-          <p className="text-sm font-medium text-red-600">
-            Leave Days: {data.leaveDays}
-          </p>
-          {data.leaveTypes && Object.keys(data.leaveTypes).length > 0 && (
-            <div className="ml-2 mt-1 space-y-1">
-              {Object.entries(data.leaveTypes).map(([type, days]) => (
-                <p key={type} className="text-xs text-muted-foreground">
-                  • {type}: {days as number} days
-                </p>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Regularization breakdown */}
-        <div>
-          <p className="text-sm font-medium text-blue-600">
-            Regularization Days: {data.regularizationDays}
-          </p>
-          {data.regularizationReasons && Object.keys(data.regularizationReasons).length > 0 && (
-            <div className="ml-2 mt-1 space-y-1">
-              {Object.entries(data.regularizationReasons).map(([reason, days]) => (
-                <p key={reason} className="text-xs text-muted-foreground">
-                  • {reason}: {days as number} days
-                </p>
-              ))}
-            </div>
-          )}
+        <div className="space-y-1">
+          {payload.map((entry: any) => {
+            const isReg = entry.dataKey.startsWith('reg_');
+            const displayName = isReg ? entry.dataKey.replace('reg_', '') : entry.dataKey;
+            const color = isReg ? 'text-blue-600' : 'text-red-600';
+            
+            return (
+              <p key={entry.dataKey} className={`text-sm ${color}`}>
+                {displayName}: {entry.value} days
+              </p>
+            );
+          })}
         </div>
       </div>
     );
+  };
+
+  // Determine which lines to show
+  const linesToShow = selectedTypes.length > 0 
+    ? selectedTypes 
+    : ['Total Leaves', 'Total Regularizations'];
+
+  // Generate distinct shades for multiple lines of same category
+  const getLineColor = (type: string, index: number, total: number) => {
+    const isReg = type.startsWith('reg_');
+    if (type === 'Total Leaves') return 'hsl(0 84% 60%)';
+    if (type === 'Total Regularizations') return 'hsl(217 91% 60%)';
+    
+    if (isReg) {
+      // Blue shades for regularizations
+      const lightness = 60 - (index * 10);
+      return `hsl(217 91% ${lightness}%)`;
+    } else {
+      // Red shades for leaves
+      const lightness = 60 - (index * 10);
+      return `hsl(0 84% ${lightness}%)`;
+    }
   };
 
   return (
@@ -269,26 +272,25 @@ export const EmployeeLeaveRegularizationChart = () => {
                 <YAxis className="text-xs" />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="leaveDays" 
-                  stroke="hsl(0 84% 60%)"
-                  strokeWidth={2} 
-                  name="Leave Days"
-                  connectNulls
-                  dot={{ fill: "hsl(0 84% 60%)", r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="regularizationDays" 
-                  stroke="hsl(217 91% 60%)"
-                  strokeWidth={2} 
-                  name="Regularization Days"
-                  connectNulls
-                  dot={{ fill: "hsl(217 91% 60%)", r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
+                {linesToShow.map((type, index) => {
+                  const isReg = type.startsWith('reg_');
+                  const displayName = isReg ? type.replace('reg_', '') : type;
+                  const lineColor = getLineColor(type, index, linesToShow.length);
+                  
+                  return (
+                    <Line 
+                      key={type}
+                      type="monotone" 
+                      dataKey={type}
+                      stroke={lineColor}
+                      strokeWidth={2} 
+                      name={displayName}
+                      connectNulls
+                      dot={{ fill: lineColor, r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  );
+                })}
               </LineChart>
             </ResponsiveContainer>
           ) : (
