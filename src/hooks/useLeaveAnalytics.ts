@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 
-export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveTypes?: string[]) => {
+export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveType?: string) => {
   return useQuery({
-    queryKey: ['leave-analytics', startDate, endDate, leaveTypes],
+    queryKey: ['leave-analytics', startDate, endDate, leaveType],
     queryFn: async () => {
       let query = supabase
         .from('leave_records')
@@ -17,75 +17,48 @@ export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveTypes?:
       if (endDate) {
         query = query.lte('to_date', format(endDate, 'yyyy-MM-dd'));
       }
-      // Only filter by leave types if "All Leaves" is not selected
-      if (leaveTypes && leaveTypes.length > 0 && !leaveTypes.includes('All Leaves')) {
-        query = query.in('leave_type', leaveTypes);
+      // Filter by leave type if not "All Leave Types"
+      if (leaveType && leaveType !== 'All Leave Types') {
+        query = query.eq('leave_type', leaveType);
       }
 
       const { data: leaves, error } = await query;
       
       if (error) throw error;
 
-      // Calculate analytics
-      const totalRecords = leaves?.length || 0;
-      
-      // Leave type distribution
-      const leaveTypeCount: Record<string, number> = {};
-      leaves?.forEach(leave => {
-        const type = leave.leave_type || 'Unknown';
-        leaveTypeCount[type] = (leaveTypeCount[type] || 0) + 1;
-      });
+      // Calculate daily leave data for heatmap
+      const dailyLeaveMap: Record<string, { count: number; employees: { name: string; leaveType: string }[] }> = {};
 
-      // Find most used leave type
-      const mostUsedType = Object.entries(leaveTypeCount)
-        .sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
-
-      // Monthly trends by leave type
-      const monthlyDataByType: Record<string, Record<string, number>> = {};
-      const monthlyTotals: Record<string, number> = {};
-      
       leaves?.forEach(leave => {
-        const month = format(new Date(leave.from_date), 'MMM yyyy');
-        const type = leave.leave_type || 'Unknown';
-        if (!monthlyDataByType[month]) {
-          monthlyDataByType[month] = {};
-        }
-        monthlyDataByType[month][type] = (monthlyDataByType[month][type] || 0) + 1;
+        const fromDate = new Date(leave.from_date);
+        const toDate = new Date(leave.to_date);
         
-        // Track monthly totals for "All Leaves"
-        monthlyTotals[month] = (monthlyTotals[month] || 0) + 1;
+        // Expand date range to individual days
+        for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
+          const dateKey = format(d, 'yyyy-MM-dd');
+          
+          if (!dailyLeaveMap[dateKey]) {
+            dailyLeaveMap[dateKey] = { count: 0, employees: [] };
+          }
+          
+          dailyLeaveMap[dateKey].count += 1;
+          dailyLeaveMap[dateKey].employees.push({
+            name: leave.employees?.name || 'Unknown',
+            leaveType: leave.leave_type || 'Unknown'
+          });
+        }
       });
 
-      // Convert to array format for recharts
-      const monthlyTrends = Object.entries(monthlyDataByType)
-        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-        .map(([month, types]) => ({
-          month,
-          ...types,
-          'All Leaves': monthlyTotals[month] || 0
-        }));
-
-      // Date range
-      const dates = leaves?.map(l => new Date(l.from_date)) || [];
-      const minDate = dates.length ? new Date(Math.min(...dates.map(d => d.getTime()))) : null;
-      const maxDate = dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
-
-      // Unique employees
-      const uniqueEmployees = new Set(leaves?.map(l => l.employee_id)).size;
+      // Convert to array format for the component
+      const dailyLeaveData = Object.entries(dailyLeaveMap).map(([date, data]) => ({
+        date,
+        count: data.count,
+        employees: data.employees
+      }));
 
       return {
-        totalRecords,
-        mostUsedType,
-        dateRange: minDate && maxDate 
-          ? `${format(minDate, 'MMM dd, yyyy')} - ${format(maxDate, 'MMM dd, yyyy')}`
-          : 'N/A',
-        uniqueEmployees,
-        leaveTypeDistribution: Object.entries(leaveTypeCount).map(([name, value]) => ({
-          name,
-          value
-        })),
-        monthlyTrends,
-        selectedLeaveTypes: leaveTypes || []
+        dailyLeaveData,
+        selectedLeaveType: leaveType || 'All Leave Types'
       };
     }
   });
