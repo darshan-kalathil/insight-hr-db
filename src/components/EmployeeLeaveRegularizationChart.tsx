@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CalendarIcon, Check, ChevronsUpDown, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useEmployeeLeaveRegularization, useEmployees } from '@/hooks/useEmployeeLeaveRegularization';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -16,15 +17,32 @@ export const EmployeeLeaveRegularizationChart = () => {
   const [endDate, setEndDate] = useState<Date>(financialYear.endDate);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [openCombobox, setOpenCombobox] = useState(false);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [openTypeFilter, setOpenTypeFilter] = useState(false);
 
   const { data: employees, isLoading: loadingEmployees } = useEmployees();
   const { data: analytics, isLoading: loadingAnalytics } = useEmployeeLeaveRegularization(
     selectedEmployeeId,
     startDate,
-    endDate
+    endDate,
+    selectedTypes.length > 0 ? selectedTypes : undefined
   );
 
   const selectedEmployee = employees?.find(e => e.id === selectedEmployeeId);
+
+  // Build available types list
+  const availableTypes = [
+    ...(analytics?.allLeaveTypes || []),
+    ...(analytics?.allRegReasons || []).map(r => `reg_${r}`)
+  ];
+
+  const toggleType = (type: string) => {
+    setSelectedTypes(prev =>
+      prev.includes(type)
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  };
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -38,13 +56,13 @@ export const EmployeeLeaveRegularizationChart = () => {
         {/* Leave breakdown */}
         <div className="mb-3">
           <p className="text-sm font-medium text-red-600">
-            Leave Count: {data.leaveCount}
+            Leave Days: {data.leaveDays}
           </p>
           {data.leaveTypes && Object.keys(data.leaveTypes).length > 0 && (
             <div className="ml-2 mt-1 space-y-1">
-              {Object.entries(data.leaveTypes).map(([type, count]) => (
+              {Object.entries(data.leaveTypes).map(([type, days]) => (
                 <p key={type} className="text-xs text-muted-foreground">
-                  • {type}: {count as number}
+                  • {type}: {days as number} days
                 </p>
               ))}
             </div>
@@ -54,13 +72,13 @@ export const EmployeeLeaveRegularizationChart = () => {
         {/* Regularization breakdown */}
         <div>
           <p className="text-sm font-medium text-blue-600">
-            Regularization Count: {data.regularizationCount}
+            Regularization Days: {data.regularizationDays}
           </p>
           {data.regularizationReasons && Object.keys(data.regularizationReasons).length > 0 && (
             <div className="ml-2 mt-1 space-y-1">
-              {Object.entries(data.regularizationReasons).map(([reason, count]) => (
+              {Object.entries(data.regularizationReasons).map(([reason, days]) => (
                 <p key={reason} className="text-xs text-muted-foreground">
-                  • {reason}: {count as number}
+                  • {reason}: {days as number} days
                 </p>
               ))}
             </div>
@@ -146,11 +164,79 @@ export const EmployeeLeaveRegularizationChart = () => {
             </PopoverContent>
           </Popover>
 
+          {/* Type Filter */}
+          <Popover open={openTypeFilter} onOpenChange={setOpenTypeFilter}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={openTypeFilter}
+                className="w-[300px] justify-between"
+                disabled={!selectedEmployeeId}
+              >
+                {selectedTypes.length > 0
+                  ? `${selectedTypes.length} type(s) selected`
+                  : "Filter by type..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search type..." />
+                <CommandList>
+                  <CommandEmpty>No types available.</CommandEmpty>
+                  <CommandGroup>
+                    {availableTypes.map((type) => {
+                      const displayName = type.startsWith('reg_')
+                        ? `Reg: ${type.replace('reg_', '')}`
+                        : `Leave: ${type}`;
+                      return (
+                        <CommandItem
+                          key={type}
+                          value={displayName}
+                          onSelect={() => toggleType(type)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedTypes.includes(type) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {displayName}
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {selectedTypes.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedTypes.map((type) => {
+                const displayName = type.startsWith('reg_')
+                  ? `Reg: ${type.replace('reg_', '')}`
+                  : `Leave: ${type}`;
+                return (
+                  <Badge key={type} variant="secondary" className="gap-1">
+                    {displayName}
+                    <X
+                      className="h-3 w-3 cursor-pointer"
+                      onClick={() => toggleType(type)}
+                    />
+                  </Badge>
+                );
+              })}
+            </div>
+          )}
+
           <Button variant="ghost" onClick={() => {
             const fy = getCurrentFinancialYear();
             setStartDate(fy.startDate);
             setEndDate(fy.endDate);
             setSelectedEmployeeId('');
+            setSelectedTypes([]);
           }}>
             Reset filters
           </Button>
@@ -185,20 +271,20 @@ export const EmployeeLeaveRegularizationChart = () => {
                 <Legend />
                 <Line 
                   type="monotone" 
-                  dataKey="leaveCount" 
+                  dataKey="leaveDays" 
                   stroke="hsl(0 84% 60%)"
                   strokeWidth={2} 
-                  name="Leave Count"
+                  name="Leave Days"
                   connectNulls
                   dot={{ fill: "hsl(0 84% 60%)", r: 4 }}
                   activeDot={{ r: 6 }}
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="regularizationCount" 
+                  dataKey="regularizationDays" 
                   stroke="hsl(217 91% 60%)"
                   strokeWidth={2} 
-                  name="Regularization Count"
+                  name="Regularization Days"
                   connectNulls
                   dot={{ fill: "hsl(217 91% 60%)", r: 4 }}
                   activeDot={{ r: 6 }}
