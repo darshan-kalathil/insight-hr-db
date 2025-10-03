@@ -10,6 +10,8 @@ A comprehensive HR analytics application for tracking employee data, attrition r
 - 📊 **Salary Range Management** - Define and manage salary ranges with variable pay percentages
 - 📈 **Interactive Charts** - Visualize data by pod, level, location, and gender
 - 📅 **Period-based Analysis** - Analyze metrics across custom date ranges (defaults to financial year)
+- 🏖️ **Leave Management** - Track and analyze leave records with multi-type comparison charts
+- 🕐 **Attendance Regularization** - Manage attendance regularization requests with reason-based analytics
 - 📤 **Excel Import** - Bulk upload employee data via Excel files
 - 🔐 **Authentication** - Secure login system with role-based access
 - ⚡ **Automated Status Updates** - Automatic employee status transitions based on exit dates
@@ -181,6 +183,26 @@ Define salary ranges for each level:
 - `variable_pay_percentage` (numeric, percentage of fixed salary for variable pay)
 - `created_at`, `updated_at` (timestamps)
 
+#### `leave_records`
+Track employee leave records:
+- `id` (uuid, primary key)
+- `employee_id` (uuid, references employees)
+- `leave_type` (text: Sick Leave, Casual Leave, Earned Leave, Compensatory Off, Paternity Leave, Bereavement Leave)
+- `from_date` (date, start date of leave)
+- `to_date` (date, end date of leave)
+- `number_of_days` (numeric, total leave days)
+- `status` (text: Pending, Approved, Rejected)
+- `created_at`, `updated_at` (timestamps)
+
+#### `regularization_records`
+Track attendance regularization requests:
+- `id` (uuid, primary key)
+- `employee_id` (uuid, references employees)
+- `date` (date, date being regularized)
+- `reason` (text: Forgot to Punch In, Forgot to Punch Out, WFH, Permission, etc.)
+- `status` (text: Pending, Approved, Rejected)
+- `created_at`, `updated_at` (timestamps)
+
 ### Row Level Security (RLS)
 
 All tables have RLS policies enabled:
@@ -188,6 +210,8 @@ All tables have RLS policies enabled:
 - **Profiles**: Users can view all profiles and update their own
 - **User Roles**: Only super admins can manage roles
 - **Salary Ranges**: Authenticated users can view; only super admins can insert/update/delete
+- **Leave Records**: Authenticated users can view and insert; employees can update/delete their own records
+- **Regularization Records**: Authenticated users can view and insert; employees can update/delete their own records
 
 ## Excel Import Format
 
@@ -357,6 +381,36 @@ The system includes intelligent status tracking:
 - **Automatic Status Updates**: A daily cron job automatically updates employees from "Serving Notice Period" to "Inactive" when their exit date is reached
 - **Status Options**: Active, Inactive, Serving Notice Period
 
+### Leave & Attendance Management
+
+The `/leave-attendance` page provides comprehensive leave and attendance tracking with powerful analytics.
+
+#### Leave Analytics
+
+**Multi-Type Comparison**
+- Compare trends for 2 or more leave types simultaneously
+- Color-coded lines for each leave type:
+  - Earned Leave: Blue
+  - Sick Leave: Red
+  - Casual Leave: Green
+  - Compensatory Off: Yellow
+  - Paternity Leave: Pink
+  - Bereavement Leave: Black
+
+**Interactive Features**
+- Multiselect dropdown to choose specific leave types for comparison
+- Date range filters (defaults to current financial year)
+- Line chart showing monthly trends for selected leave types
+- Tooltips displaying detailed leave counts per month
+
+#### Regularization Analytics
+
+**Top Requesters by Reason**
+- Filter by specific regularization reason (WFH, Forgot to Punch In/Out, Permission, etc.)
+- View top 10 employees with most requests for the selected reason
+- Table displays employee name and request count
+- Blank display when no specific reason is selected
+
 ### Analytics Calculations
 
 #### Attrition Rate
@@ -367,6 +421,14 @@ Where:
 - Employees Who Left = Count of employees with date_of_exit in period
 - Average Headcount = (Headcount at Start + Headcount at End) / 2
 - Default period = Current Financial Year (April 1 - March 31)
+```
+
+#### Leave Metrics
+```
+Monthly Leave Trends = Count of leave instances per month by type
+- Aggregated by from_date month
+- Separated by leave_type for multi-line comparison
+- Null values handled with connectNulls for continuous lines
 ```
 
 ## Support
