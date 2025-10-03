@@ -1,22 +1,48 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLeaveAnalytics } from '@/hooks/useLeaveAnalytics';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { cn, getCurrentFinancialYear } from '@/lib/utils';
+
+const LEAVE_TYPES = [
+  'Sick Leave',
+  'Casual Leave',
+  'Earned Leave',
+  'Compensatory Off',
+  'Paternity Leave',
+  'Bereavement Leave'
+];
+
+const COLORS = [
+  'hsl(var(--primary))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+  'hsl(var(--destructive))'
+];
 
 export const LeaveAnalytics = () => {
   const financialYear = getCurrentFinancialYear();
   const [startDate, setStartDate] = useState<Date>(financialYear.startDate);
   const [endDate, setEndDate] = useState<Date>(financialYear.endDate);
-  const [leaveType, setLeaveType] = useState<string>('all');
+  const [selectedLeaveTypes, setSelectedLeaveTypes] = useState<string[]>([]);
 
-  const { data: analytics, isLoading } = useLeaveAnalytics(startDate, endDate, leaveType);
+  const { data: analytics, isLoading } = useLeaveAnalytics(startDate, endDate, selectedLeaveTypes.length > 0 ? selectedLeaveTypes : undefined);
+
+  const toggleLeaveType = (type: string) => {
+    setSelectedLeaveTypes(prev => 
+      prev.includes(type) 
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -50,81 +76,79 @@ export const LeaveAnalytics = () => {
             </PopoverContent>
           </Popover>
 
-          <Select value={leaveType} onValueChange={setLeaveType}>
-            <SelectTrigger className="w-[240px]">
-              <SelectValue placeholder="Select leave type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All leave types</SelectItem>
-              <SelectItem value="Sick Leave">Sick Leave</SelectItem>
-              <SelectItem value="Casual Leave">Casual Leave</SelectItem>
-              <SelectItem value="Earned Leave">Earned Leave</SelectItem>
-              <SelectItem value="Compensatory Off">Compensatory Off</SelectItem>
-              <SelectItem value="Paternity Leave">Paternity Leave</SelectItem>
-              <SelectItem value="Bereavement Leave">Bereavement Leave</SelectItem>
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                {selectedLeaveTypes.length === 0 
+                  ? "Select leave types" 
+                  : `${selectedLeaveTypes.length} type(s) selected`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[240px] p-4">
+              <div className="space-y-2">
+                {LEAVE_TYPES.map(type => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={type}
+                      checked={selectedLeaveTypes.includes(type)}
+                      onCheckedChange={() => toggleLeaveType(type)}
+                    />
+                    <label htmlFor={type} className="text-sm cursor-pointer flex-1">
+                      {type}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Button variant="ghost" onClick={() => {
             const fy = getCurrentFinancialYear();
             setStartDate(fy.startDate);
             setEndDate(fy.endDate);
-            setLeaveType('all');
+            setSelectedLeaveTypes([]);
           }}>
             Clear filters
           </Button>
         </CardContent>
       </Card>
 
-      {/* Charts */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Leave Type Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {analytics?.leaveTypeDistribution && analytics.leaveTypeDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={analytics.leaveTypeDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                No data available
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Leave Trends Over Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {analytics?.monthlyTrends && analytics.monthlyTrends.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={analytics.monthlyTrends}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="month" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                  <Legend />
-                  <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} name="Leave Count" />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                No data available
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Leave Trends Over Time by Type</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {analytics?.monthlyTrends && analytics.monthlyTrends.length > 0 && selectedLeaveTypes.length > 0 ? (
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={analytics.monthlyTrends}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="month" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
+                <Legend />
+                {selectedLeaveTypes.map((type, index) => (
+                  <Line 
+                    key={type}
+                    type="monotone" 
+                    dataKey={type} 
+                    stroke={COLORS[index % COLORS.length]} 
+                    strokeWidth={2} 
+                    name={type}
+                    connectNulls
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+              {selectedLeaveTypes.length === 0 
+                ? "Select leave types to view trends"
+                : "No data available"}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

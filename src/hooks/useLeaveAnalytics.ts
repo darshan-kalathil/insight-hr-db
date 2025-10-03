@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 
-export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveType?: string) => {
+export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveTypes?: string[]) => {
   return useQuery({
-    queryKey: ['leave-analytics', startDate, endDate, leaveType],
+    queryKey: ['leave-analytics', startDate, endDate, leaveTypes],
     queryFn: async () => {
       let query = supabase
         .from('leave_records')
@@ -17,8 +17,8 @@ export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveType?: 
       if (endDate) {
         query = query.lte('to_date', format(endDate, 'yyyy-MM-dd'));
       }
-      if (leaveType && leaveType !== 'all') {
-        query = query.eq('leave_type', leaveType);
+      if (leaveTypes && leaveTypes.length > 0) {
+        query = query.in('leave_type', leaveTypes);
       }
 
       const { data: leaves, error } = await query;
@@ -39,12 +39,24 @@ export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveType?: 
       const mostUsedType = Object.entries(leaveTypeCount)
         .sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
 
-      // Monthly trends
-      const monthlyData: Record<string, number> = {};
+      // Monthly trends by leave type
+      const monthlyDataByType: Record<string, Record<string, number>> = {};
       leaves?.forEach(leave => {
         const month = format(new Date(leave.from_date), 'MMM yyyy');
-        monthlyData[month] = (monthlyData[month] || 0) + 1;
+        const type = leave.leave_type || 'Unknown';
+        if (!monthlyDataByType[month]) {
+          monthlyDataByType[month] = {};
+        }
+        monthlyDataByType[month][type] = (monthlyDataByType[month][type] || 0) + 1;
       });
+
+      // Convert to array format for recharts
+      const monthlyTrends = Object.entries(monthlyDataByType)
+        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+        .map(([month, types]) => ({
+          month,
+          ...types
+        }));
 
       // Date range
       const dates = leaves?.map(l => new Date(l.from_date)) || [];
@@ -65,12 +77,8 @@ export const useLeaveAnalytics = (startDate?: Date, endDate?: Date, leaveType?: 
           name,
           value
         })),
-        monthlyTrends: Object.entries(monthlyData)
-          .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-          .map(([month, count]) => ({
-            month,
-            count
-          }))
+        monthlyTrends,
+        selectedLeaveTypes: leaveTypes || []
       };
     }
   });
