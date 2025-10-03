@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Analytics from "./pages/Analytics";
 import Salary from "./pages/Salary";
 import AdminConsole from "./pages/AdminConsole";
+import LeaveAttendance from "./pages/LeaveAttendance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/leave-attendance" element={<ProtectedRoute><LeaveAttendance /></ProtectedRoute>} />
           <Route path="/salary" element={<ProtectedRoute><Salary /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><AdminConsole /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

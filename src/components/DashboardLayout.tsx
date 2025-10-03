@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Users, BarChart3, Settings, LogOut, DollarSign } from 'lucide-react';
+import { Users, BarChart3, Settings, LogOut, DollarSign, CalendarClock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface DashboardLayoutProps {
@@ -31,6 +31,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navItems = [
     { path: '/', icon: Users, label: 'Employees' },
     { path: '/analytics', icon: BarChart3, label: 'Analytics' },
+    { path: '/leave-attendance', icon: CalendarClock, label: 'Leave & Attendance' },
     { path: '/salary', icon: DollarSign, label: 'Salary' },
     { path: '/users', icon: Settings, label: 'Admin Console' }
   ];
