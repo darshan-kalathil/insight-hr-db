@@ -34,9 +34,11 @@ const LeaveAttendance = () => {
       return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
     }
 
-    // Handle string dates (e.g., "22-Oct-2025")
+    // Handle string dates (e.g., "22-Oct-2025" or "29-Sep-2025 17:58:37")
     if (typeof dateValue === 'string') {
-      const date = new Date(dateValue);
+      // Extract just the date part if datetime format
+      const dateOnly = dateValue.split(' ')[0];
+      const date = new Date(dateOnly);
       if (!isNaN(date.getTime())) {
         return date.toISOString().split('T')[0];
       }
@@ -266,11 +268,11 @@ const LeaveAttendance = () => {
 
           const attendanceRecord = {
             employee_number: employeeNumber,
-            attendance_date: parseDate(row['Attendance Date']),
-            old_check_in: parseTime(row['Old Check in']),
-            new_check_in: parseTime(row['New Check in']),
-            old_check_out: parseTime(row['Old Check out']),
-            new_check_out: parseTime(row['New Check out']),
+            attendance_date: parseDate(row['Attendance Day']),
+            old_check_in: parseTime(row['Old Check-In']),
+            new_check_in: parseTime(row['New Check-In']),
+            old_check_out: parseTime(row['Old Check-Out']),
+            new_check_out: parseTime(row['New Check-Out']),
             old_hours: parseFloat(row['Old Hours']) || 0,
             new_hours: parseFloat(row['New Hours']) || 0,
             old_status: row['Old Status']?.toString() || 'Absent',
@@ -278,8 +280,8 @@ const LeaveAttendance = () => {
             reason: row['Reason']?.toString(),
             description: row['Description']?.toString() || null,
             approval_status: approvalStatus,
-            approver_name: row['Approver Name']?.toString() || null,
-            approval_time: row['Approval time'] ? parseDate(row['Approval time']) : null
+            approver_name: row['Approver']?.toString() || null,
+            approval_time: row['Approval Time'] ? parseDate(row['Approval Time']) : null
           };
 
           results.data.push(attendanceRecord);
