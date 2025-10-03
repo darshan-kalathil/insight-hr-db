@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logActivity } from '@/lib/activityLogger';
 import { LeaveAnalytics } from '@/components/LeaveAnalytics';
 import { RegularizationAnalytics } from '@/components/RegularizationAnalytics';
+import { EmployeeLeaveRegularizationChart } from '@/components/EmployeeLeaveRegularizationChart';
 
 type ParseResult = {
   total: number;
@@ -374,7 +375,11 @@ const LeaveAttendance = () => {
           </TabsList>
 
           <TabsContent value="uploads" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+            {/* Employee Search and Chart */}
+            <EmployeeLeaveRegularizationChart />
+
+            {/* Upload Buttons at Bottom */}
+            <div className="grid gap-4 md:grid-cols-2 mt-8">
               {/* Leave Records Upload */}
               <Card>
                 <CardHeader>
