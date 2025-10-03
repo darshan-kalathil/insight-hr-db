@@ -168,13 +168,16 @@ export const EmployeeLeaveRegularizationChart = () => {
           {/* Leave Type Filter */}
           <Select 
             value={selectedLeaveType} 
-            onValueChange={setSelectedLeaveType}
+            onValueChange={(value) => setSelectedLeaveType(value === 'none' ? '' : value)}
             disabled={!selectedEmployeeId}
           >
             <SelectTrigger className="w-[240px]">
               <SelectValue placeholder="Select leave type..." />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="none">
+                <span className="text-muted-foreground">Clear selection</span>
+              </SelectItem>
               {leaveTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -186,13 +189,16 @@ export const EmployeeLeaveRegularizationChart = () => {
           {/* Regularization Type Filter */}
           <Select 
             value={selectedRegType} 
-            onValueChange={setSelectedRegType}
+            onValueChange={(value) => setSelectedRegType(value === 'none' ? '' : value)}
             disabled={!selectedEmployeeId}
           >
             <SelectTrigger className="w-[240px]">
               <SelectValue placeholder="Select reg type..." />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="none">
+                <span className="text-muted-foreground">Clear selection</span>
+              </SelectItem>
               {regTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -205,7 +211,6 @@ export const EmployeeLeaveRegularizationChart = () => {
             const fy = getCurrentFinancialYear();
             setStartDate(fy.startDate);
             setEndDate(fy.endDate);
-            setSelectedEmployeeId('');
             setSelectedLeaveType('');
             setSelectedRegType('');
           }}>
