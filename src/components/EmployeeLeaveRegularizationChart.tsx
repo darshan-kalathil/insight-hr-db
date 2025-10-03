@@ -17,23 +17,23 @@ export const EmployeeLeaveRegularizationChart = () => {
   const [endDate, setEndDate] = useState<Date>(financialYear.endDate);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [openCombobox, setOpenCombobox] = useState(false);
-  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedLeaveType, setSelectedLeaveType] = useState<string>('');
+  const [selectedRegType, setSelectedRegType] = useState<string>('');
 
   const { data: employees, isLoading: loadingEmployees } = useEmployees();
   const { data: analytics, isLoading: loadingAnalytics } = useEmployeeLeaveRegularization(
     selectedEmployeeId,
     startDate,
     endDate,
-    selectedType || undefined
+    selectedLeaveType || undefined,
+    selectedRegType || undefined
   );
 
   const selectedEmployee = employees?.find(e => e.id === selectedEmployeeId);
 
-  // Build available types list - allRegReasons already has reg_ prefix
-  const availableTypes = [
-    ...(analytics?.allLeaveTypes || []),
-    ...(analytics?.allRegReasons || [])
-  ];
+  // Separate leave types and regularization types
+  const leaveTypes = analytics?.allLeaveTypes || [];
+  const regTypes = (analytics?.allRegReasons || []).map(r => r.replace('reg_', ''));
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -61,9 +61,16 @@ export const EmployeeLeaveRegularizationChart = () => {
   };
 
   // Determine which lines to show
-  const linesToShow = selectedType 
-    ? [selectedType] 
-    : ['Total Leaves', 'Total Regularizations'];
+  const linesToShow = [];
+  if (selectedLeaveType) {
+    linesToShow.push(selectedLeaveType);
+  }
+  if (selectedRegType) {
+    linesToShow.push(`reg_${selectedRegType}`);
+  }
+  if (linesToShow.length === 0) {
+    linesToShow.push('Total Leaves', 'Total Regularizations');
+  }
 
   // Generate distinct shades for multiple lines of same category
   const getLineColor = (type: string, index: number, total: number) => {
@@ -158,26 +165,39 @@ export const EmployeeLeaveRegularizationChart = () => {
             </PopoverContent>
           </Popover>
 
-          {/* Type Filter */}
+          {/* Leave Type Filter */}
           <Select 
-            value={selectedType} 
-            onValueChange={setSelectedType}
+            value={selectedLeaveType} 
+            onValueChange={setSelectedLeaveType}
             disabled={!selectedEmployeeId}
           >
-            <SelectTrigger className="w-[300px]">
-              <SelectValue placeholder="Filter by type..." />
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Select leave type..." />
             </SelectTrigger>
             <SelectContent>
-              {availableTypes.map((type) => {
-                const displayName = type.startsWith('reg_')
-                  ? `Reg: ${type.replace('reg_', '')}`
-                  : `Leave: ${type}`;
-                return (
-                  <SelectItem key={type} value={type}>
-                    {displayName}
-                  </SelectItem>
-                );
-              })}
+              {leaveTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Regularization Type Filter */}
+          <Select 
+            value={selectedRegType} 
+            onValueChange={setSelectedRegType}
+            disabled={!selectedEmployeeId}
+          >
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Select reg type..." />
+            </SelectTrigger>
+            <SelectContent>
+              {regTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -186,7 +206,8 @@ export const EmployeeLeaveRegularizationChart = () => {
             setStartDate(fy.startDate);
             setEndDate(fy.endDate);
             setSelectedEmployeeId('');
-            setSelectedType('');
+            setSelectedLeaveType('');
+            setSelectedRegType('');
           }}>
             Reset filters
           </Button>

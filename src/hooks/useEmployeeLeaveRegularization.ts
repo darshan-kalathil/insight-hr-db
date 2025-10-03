@@ -6,10 +6,11 @@ export const useEmployeeLeaveRegularization = (
   employeeId?: string, 
   startDate?: Date, 
   endDate?: Date,
-  selectedType?: string
+  selectedLeaveType?: string,
+  selectedRegType?: string
 ) => {
   return useQuery({
-    queryKey: ['employee-leave-regularization', employeeId, startDate, endDate, selectedType],
+    queryKey: ['employee-leave-regularization', employeeId, startDate, endDate, selectedLeaveType, selectedRegType],
     queryFn: async () => {
       if (!employeeId) return null;
 
@@ -27,8 +28,8 @@ export const useEmployeeLeaveRegularization = (
       }
 
       // Filter by selected leave type
-      if (selectedType && !selectedType.startsWith('reg_')) {
-        leaveQuery = leaveQuery.eq('leave_type', selectedType);
+      if (selectedLeaveType) {
+        leaveQuery = leaveQuery.eq('leave_type', selectedLeaveType);
       }
 
       const { data: leaves, error: leaveError } = await leaveQuery;
@@ -48,9 +49,8 @@ export const useEmployeeLeaveRegularization = (
       }
 
       // Filter by selected regularization reason
-      if (selectedType && selectedType.startsWith('reg_')) {
-        const regReason = selectedType.replace('reg_', '');
-        regQuery = regQuery.eq('reason', regReason);
+      if (selectedRegType) {
+        regQuery = regQuery.eq('reason', selectedRegType);
       }
 
       const { data: regularizations, error: regError } = await regQuery;
