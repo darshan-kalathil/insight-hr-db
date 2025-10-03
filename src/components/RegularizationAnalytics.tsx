@@ -3,16 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarIcon, FileText, User, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { useRegularizationAnalytics } from '@/hooks/useRegularizationAnalytics';
-import { cn } from '@/lib/utils';
+import { cn, getCurrentFinancialYear } from '@/lib/utils';
 
 export const RegularizationAnalytics = () => {
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
+  const financialYear = getCurrentFinancialYear();
+  const [startDate, setStartDate] = useState<Date>(financialYear.startDate);
+  const [endDate, setEndDate] = useState<Date>(financialYear.endDate);
+  const [reason, setReason] = useState<string>('all');
 
-  const { data: analytics, isLoading } = useRegularizationAnalytics(startDate, endDate);
+  const { data: analytics, isLoading } = useRegularizationAnalytics(startDate, endDate, reason);
 
   if (isLoading) {
     return (
@@ -63,14 +66,26 @@ export const RegularizationAnalytics = () => {
             </PopoverContent>
           </Popover>
 
-          {(startDate || endDate) && (
-            <Button variant="ghost" onClick={() => {
-              setStartDate(undefined);
-              setEndDate(undefined);
-            }}>
-              Clear filters
-            </Button>
-          )}
+          <Select value={reason} onValueChange={setReason}>
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Select reason" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All reasons</SelectItem>
+              <SelectItem value="Travelling for Work">Travelling for Work</SelectItem>
+              <SelectItem value="Work From Home">Work From Home</SelectItem>
+              <SelectItem value="Attending Business Events">Attending Business Events</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button variant="ghost" onClick={() => {
+            const fy = getCurrentFinancialYear();
+            setStartDate(fy.startDate);
+            setEndDate(fy.endDate);
+            setReason('all');
+          }}>
+            Clear filters
+          </Button>
         </CardContent>
       </Card>
 

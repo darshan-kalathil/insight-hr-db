@@ -8,11 +8,12 @@ import { CalendarIcon, Users, TrendingUp, Calendar as CalendarDays } from 'lucid
 import { format } from 'date-fns';
 import { useLeaveAnalytics } from '@/hooks/useLeaveAnalytics';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { cn } from '@/lib/utils';
+import { cn, getCurrentFinancialYear } from '@/lib/utils';
 
 export const LeaveAnalytics = () => {
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
+  const financialYear = getCurrentFinancialYear();
+  const [startDate, setStartDate] = useState<Date>(financialYear.startDate);
+  const [endDate, setEndDate] = useState<Date>(financialYear.endDate);
   const [leaveType, setLeaveType] = useState<string>('all');
 
   const { data: analytics, isLoading } = useLeaveAnalytics(startDate, endDate, leaveType);
@@ -68,26 +69,27 @@ export const LeaveAnalytics = () => {
 
           <Select value={leaveType} onValueChange={setLeaveType}>
             <SelectTrigger className="w-[240px]">
-              <SelectValue placeholder="All leave types" />
+              <SelectValue placeholder="Select leave type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All leave types</SelectItem>
               <SelectItem value="Sick Leave">Sick Leave</SelectItem>
               <SelectItem value="Casual Leave">Casual Leave</SelectItem>
-              <SelectItem value="Privilege Leave">Privilege Leave</SelectItem>
+              <SelectItem value="Earned Leave">Earned Leave</SelectItem>
               <SelectItem value="Compensatory Off">Compensatory Off</SelectItem>
+              <SelectItem value="Paternity Leave">Paternity Leave</SelectItem>
+              <SelectItem value="Bereavement Leave">Bereavement Leave</SelectItem>
             </SelectContent>
           </Select>
 
-          {(startDate || endDate || leaveType !== 'all') && (
-            <Button variant="ghost" onClick={() => {
-              setStartDate(undefined);
-              setEndDate(undefined);
-              setLeaveType('all');
-            }}>
-              Clear filters
-            </Button>
-          )}
+          <Button variant="ghost" onClick={() => {
+            const fy = getCurrentFinancialYear();
+            setStartDate(fy.startDate);
+            setEndDate(fy.endDate);
+            setLeaveType('all');
+          }}>
+            Clear filters
+          </Button>
         </CardContent>
       </Card>
 

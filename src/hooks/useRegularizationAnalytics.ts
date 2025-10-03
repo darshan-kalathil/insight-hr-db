@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
-export const useRegularizationAnalytics = (startDate?: Date, endDate?: Date) => {
+export const useRegularizationAnalytics = (startDate?: Date, endDate?: Date, reason?: string) => {
   return useQuery({
-    queryKey: ['regularization-analytics', startDate, endDate],
+    queryKey: ['regularization-analytics', startDate, endDate, reason],
     queryFn: async () => {
       let query = supabase
         .from('attendance_regularization')
@@ -16,6 +16,10 @@ export const useRegularizationAnalytics = (startDate?: Date, endDate?: Date) => 
       }
       if (endDate) {
         query = query.lte('attendance_date', format(endDate, 'yyyy-MM-dd'));
+      }
+
+      if (reason && reason !== 'all') {
+        query = query.eq('reason', reason);
       }
 
       const { data: records, error } = await query;
