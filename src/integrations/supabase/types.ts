@@ -47,6 +47,50 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_regularization: {
+        Row: {
+          approval_status: string
+          attendance_date: string
+          created_at: string
+          employee_id: string
+          id: string
+          in_time: string | null
+          out_time: string | null
+          reason: string
+          updated_at: string
+        }
+        Insert: {
+          approval_status: string
+          attendance_date: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          in_time?: string | null
+          out_time?: string | null
+          reason: string
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: string
+          attendance_date?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          in_time?: string | null
+          out_time?: string | null
+          reason?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_regularization_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           birthday: string | null
@@ -115,6 +159,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      leave_records: {
+        Row: {
+          approval_status: string
+          created_at: string
+          employee_id: string
+          from_date: string
+          id: string
+          leave_type: string
+          number_of_days: number
+          reason: string | null
+          to_date: string
+          updated_at: string
+        }
+        Insert: {
+          approval_status: string
+          created_at?: string
+          employee_id: string
+          from_date: string
+          id?: string
+          leave_type: string
+          number_of_days: number
+          reason?: string | null
+          to_date: string
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: string
+          created_at?: string
+          employee_id?: string
+          from_date?: string
+          id?: string
+          leave_type?: string
+          number_of_days?: number
+          reason?: string | null
+          to_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

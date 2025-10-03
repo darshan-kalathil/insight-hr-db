@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Upload, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
+import { supabase } from '@/integrations/supabase/client';
+import { logActivity } from '@/lib/activityLogger';
 
 type ParseResult = {
   total: number;
@@ -127,13 +129,56 @@ const LeaveAttendance = () => {
         }
       }
 
+      // Insert data into database using upsert
+      if (results.data.length > 0) {
+        for (const record of results.data) {
+          // Get employee UUID from employee number
+          const { data: employee, error: employeeError } = await supabase
+            .from('employees')
+            .select('id')
+            .eq('empl_no', record.employee_number)
+            .maybeSingle();
+
+          if (employeeError || !employee) {
+            results.errors++;
+            results.errorDetails.push(`Employee ${record.employee_number} not found in database`);
+            continue;
+          }
+
+          // Upsert leave record
+          const { error: upsertError } = await supabase
+            .from('leave_records')
+            .upsert({
+              employee_id: employee.id,
+              from_date: record.from_date,
+              to_date: record.to_date,
+              leave_type: record.leave_type,
+              number_of_days: record.days_taken,
+              reason: record.reason,
+              approval_status: record.approval_status
+            }, {
+              onConflict: 'employee_id,from_date,to_date,leave_type'
+            });
+
+          if (upsertError) {
+            results.errors++;
+            results.errorDetails.push(`Failed to save record for ${record.employee_number}: ${upsertError.message}`);
+          }
+        }
+
+        await logActivity({
+          actionType: 'create',
+          entityType: 'employee',
+          entityId: 'bulk',
+          description: `Imported ${results.valid} leave records`
+        });
+      }
+
       setLeaveResult(results);
       toast({
-        title: 'Leave Data Parsed',
-        description: `Valid: ${results.valid}, Skipped (Cancelled): ${results.skipped}, Errors: ${results.errors}`
+        title: 'Leave Data Imported',
+        description: `Valid: ${results.valid}, Skipped: ${results.skipped}, Errors: ${results.errors}`
       });
-
-      console.log('Parsed Leave Records:', results.data);
     } catch (error: any) {
       toast({
         title: 'Parse Failed',
@@ -213,13 +258,55 @@ const LeaveAttendance = () => {
         }
       }
 
+      // Insert data into database using upsert
+      if (results.data.length > 0) {
+        for (const record of results.data) {
+          // Get employee UUID from employee number
+          const { data: employee, error: employeeError } = await supabase
+            .from('employees')
+            .select('id')
+            .eq('empl_no', record.employee_number)
+            .maybeSingle();
+
+          if (employeeError || !employee) {
+            results.errors++;
+            results.errorDetails.push(`Employee ${record.employee_number} not found in database`);
+            continue;
+          }
+
+          // Upsert attendance record
+          const { error: upsertError } = await supabase
+            .from('attendance_regularization')
+            .upsert({
+              employee_id: employee.id,
+              attendance_date: record.attendance_date,
+              in_time: record.new_check_in,
+              out_time: record.new_check_out,
+              reason: record.reason,
+              approval_status: record.approval_status
+            }, {
+              onConflict: 'employee_id,attendance_date,reason'
+            });
+
+          if (upsertError) {
+            results.errors++;
+            results.errorDetails.push(`Failed to save record for ${record.employee_number}: ${upsertError.message}`);
+          }
+        }
+
+        await logActivity({
+          actionType: 'create',
+          entityType: 'employee',
+          entityId: 'bulk',
+          description: `Imported ${results.valid} attendance records`
+        });
+      }
+
       setAttendanceResult(results);
       toast({
-        title: 'Attendance Data Parsed',
-        description: `Valid: ${results.valid}, Skipped (Cancelled): ${results.skipped}, Errors: ${results.errors}`
+        title: 'Attendance Data Imported',
+        description: `Valid: ${results.valid}, Skipped: ${results.skipped}, Errors: ${results.errors}`
       });
-
-      console.log('Parsed Attendance Records:', results.data);
     } catch (error: any) {
       toast({
         title: 'Parse Failed',
