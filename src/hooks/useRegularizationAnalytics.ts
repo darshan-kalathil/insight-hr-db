@@ -26,8 +26,6 @@ export const useRegularizationAnalytics = (startDate?: Date, endDate?: Date, rea
       
       if (error) throw error;
 
-      const totalRequests = records?.length || 0;
-
       // Employee with most requests
       const employeeCounts: Record<string, { count: number; name: string }> = {};
       records?.forEach(record => {
@@ -39,28 +37,18 @@ export const useRegularizationAnalytics = (startDate?: Date, endDate?: Date, rea
         employeeCounts[empId].count++;
       });
 
-      const topEmployee = Object.values(employeeCounts)
-        .sort((a, b) => b.count - a.count)[0];
-
-      // Date range
-      const dates = records?.map(r => new Date(r.attendance_date)) || [];
-      const minDate = dates.length ? new Date(Math.min(...dates.map(d => d.getTime()))) : null;
-      const maxDate = dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
-
-      // Average requests per employee
-      const uniqueEmployees = Object.keys(employeeCounts).length;
-      const avgRequestsPerEmployee = uniqueEmployees > 0 
-        ? (totalRequests / uniqueEmployees).toFixed(1)
-        : '0';
+      // Top 10 employees for the selected reason
+      const topEmployees = Object.values(employeeCounts)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+        .map((emp, index) => ({
+          rank: index + 1,
+          name: emp.name,
+          count: emp.count
+        }));
 
       return {
-        totalRequests,
-        topEmployee: topEmployee?.name || 'N/A',
-        topEmployeeCount: topEmployee?.count || 0,
-        dateRange: minDate && maxDate 
-          ? `${format(minDate, 'MMM dd, yyyy')} - ${format(maxDate, 'MMM dd, yyyy')}`
-          : 'N/A',
-        avgRequestsPerEmployee
+        topEmployees: reason && reason !== 'all' ? topEmployees : []
       };
     }
   });

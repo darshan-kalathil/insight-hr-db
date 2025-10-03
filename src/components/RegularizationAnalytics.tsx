@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, FileText, User, TrendingUp } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useRegularizationAnalytics } from '@/hooks/useRegularizationAnalytics';
 import { cn, getCurrentFinancialYear } from '@/lib/utils';
@@ -16,23 +17,6 @@ export const RegularizationAnalytics = () => {
   const [reason, setReason] = useState<string>('all');
 
   const { data: analytics, isLoading } = useRegularizationAnalytics(startDate, endDate, reason);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="space-y-2">
-                <div className="h-4 bg-muted animate-pulse rounded" />
-                <div className="h-8 bg-muted animate-pulse rounded" />
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -89,51 +73,42 @@ export const RegularizationAnalytics = () => {
         </CardContent>
       </Card>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Top 10 Requesters - Only shown when a specific reason is selected */}
+      {reason && reason !== 'all' && analytics?.topEmployees && analytics.topEmployees.length > 0 && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Top 10 Requesters for {reason}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics?.totalRequests || 0}</div>
+            {isLoading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-12 bg-muted animate-pulse rounded" />
+                ))}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Rank</TableHead>
+                    <TableHead>Employee Name</TableHead>
+                    <TableHead className="text-right">Number of Requests</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {analytics.topEmployees.map((employee) => (
+                    <TableRow key={employee.rank}>
+                      <TableCell className="font-medium">{employee.rank}</TableCell>
+                      <TableCell>{employee.name}</TableCell>
+                      <TableCell className="text-right">{employee.count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Most Active Employee</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg font-bold">{analytics?.topEmployee}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {analytics?.topEmployeeCount} requests
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Date Range</CardTitle>
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm font-medium">{analytics?.dateRange}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Requests / Employee</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics?.avgRequestsPerEmployee || '0'}</div>
-          </CardContent>
-        </Card>
-      </div>
+      )}
     </div>
   );
 };
