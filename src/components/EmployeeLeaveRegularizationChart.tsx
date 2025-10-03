@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Check, ChevronsUpDown, X } from 'lucide-react';
+import { CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useEmployeeLeaveRegularization, useEmployees } from '@/hooks/useEmployeeLeaveRegularization';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -17,32 +17,23 @@ export const EmployeeLeaveRegularizationChart = () => {
   const [endDate, setEndDate] = useState<Date>(financialYear.endDate);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('');
   const [openCombobox, setOpenCombobox] = useState(false);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [openTypeFilter, setOpenTypeFilter] = useState(false);
+  const [selectedType, setSelectedType] = useState<string>('');
 
   const { data: employees, isLoading: loadingEmployees } = useEmployees();
   const { data: analytics, isLoading: loadingAnalytics } = useEmployeeLeaveRegularization(
     selectedEmployeeId,
     startDate,
     endDate,
-    selectedTypes.length > 0 ? selectedTypes : undefined
+    selectedType || undefined
   );
 
   const selectedEmployee = employees?.find(e => e.id === selectedEmployeeId);
 
-  // Build available types list
+  // Build available types list - allRegReasons already has reg_ prefix
   const availableTypes = [
     ...(analytics?.allLeaveTypes || []),
-    ...(analytics?.allRegReasons || []).map(r => `reg_${r}`)
+    ...(analytics?.allRegReasons || [])
   ];
-
-  const toggleType = (type: string) => {
-    setSelectedTypes(prev =>
-      prev.includes(type)
-        ? prev.filter(t => t !== type)
-        : [...prev, type]
-    );
-  };
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -70,8 +61,8 @@ export const EmployeeLeaveRegularizationChart = () => {
   };
 
   // Determine which lines to show
-  const linesToShow = selectedTypes.length > 0 
-    ? selectedTypes 
+  const linesToShow = selectedType 
+    ? [selectedType] 
     : ['Total Leaves', 'Total Regularizations'];
 
   // Generate distinct shades for multiple lines of same category
@@ -168,78 +159,34 @@ export const EmployeeLeaveRegularizationChart = () => {
           </Popover>
 
           {/* Type Filter */}
-          <Popover open={openTypeFilter} onOpenChange={setOpenTypeFilter}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openTypeFilter}
-                className="w-[300px] justify-between"
-                disabled={!selectedEmployeeId}
-              >
-                {selectedTypes.length > 0
-                  ? `${selectedTypes.length} type(s) selected`
-                  : "Filter by type..."}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Search type..." />
-                <CommandList>
-                  <CommandEmpty>No types available.</CommandEmpty>
-                  <CommandGroup>
-                    {availableTypes.map((type) => {
-                      const displayName = type.startsWith('reg_')
-                        ? `Reg: ${type.replace('reg_', '')}`
-                        : `Leave: ${type}`;
-                      return (
-                        <CommandItem
-                          key={type}
-                          value={displayName}
-                          onSelect={() => toggleType(type)}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedTypes.includes(type) ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {displayName}
-                        </CommandItem>
-                      );
-                    })}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-
-          {selectedTypes.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {selectedTypes.map((type) => {
+          <Select 
+            value={selectedType} 
+            onValueChange={setSelectedType}
+            disabled={!selectedEmployeeId}
+          >
+            <SelectTrigger className="w-[300px]">
+              <SelectValue placeholder="Filter by type..." />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTypes.map((type) => {
                 const displayName = type.startsWith('reg_')
                   ? `Reg: ${type.replace('reg_', '')}`
                   : `Leave: ${type}`;
                 return (
-                  <Badge key={type} variant="secondary" className="gap-1">
+                  <SelectItem key={type} value={type}>
                     {displayName}
-                    <X
-                      className="h-3 w-3 cursor-pointer"
-                      onClick={() => toggleType(type)}
-                    />
-                  </Badge>
+                  </SelectItem>
                 );
               })}
-            </div>
-          )}
+            </SelectContent>
+          </Select>
 
           <Button variant="ghost" onClick={() => {
             const fy = getCurrentFinancialYear();
             setStartDate(fy.startDate);
             setEndDate(fy.endDate);
             setSelectedEmployeeId('');
-            setSelectedTypes([]);
+            setSelectedType('');
           }}>
             Reset filters
           </Button>
