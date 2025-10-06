@@ -75,28 +75,32 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
 
         {/* Heatmap Grid */}
         <div className="inline-block">
-          <div className="grid gap-px" style={{ gridTemplateColumns: `auto repeat(${monthsToShow.length}, 1fr)` }}>
-            {/* Header Row - Month labels */}
-            <div className="h-8"></div>
-            {monthsToShow.map((month, idx) => (
-              <div key={`header-${idx}`} className="text-xs font-medium text-center py-2 min-w-[32px]">
-                {month.label}
-              </div>
-            ))}
-
-            {/* Day rows */}
+          <div className="grid gap-px" style={{ gridTemplateColumns: `auto repeat(31, 1fr)` }}>
+            {/* Header Row - Day numbers */}
+            <div className="w-20"></div>
             {Array.from({ length: 31 }, (_, dayIndex) => {
               const day = dayIndex + 1;
               return (
+                <div key={`header-day-${day}`} className="text-xs font-medium text-center py-2 min-w-[28px]">
+                  {day}
+                </div>
+              );
+            })}
+
+            {/* Month rows */}
+            {monthsToShow.map((monthInfo, monthIdx) => {
+              const daysInMonth = getDaysInMonth(new Date(monthInfo.year, monthInfo.month));
+              
+              return (
                 <>
-                  {/* Day label */}
-                  <div key={`day-label-${day}`} className="text-xs text-muted-foreground text-right pr-2 py-1 leading-6">
-                    {day}
+                  {/* Month label */}
+                  <div key={`month-label-${monthIdx}`} className="text-xs font-medium text-right pr-3 py-1 leading-6">
+                    {monthInfo.label}
                   </div>
                   
-                  {/* Cells for each month */}
-                  {monthsToShow.map((monthInfo, monthIdx) => {
-                    const daysInMonth = getDaysInMonth(new Date(monthInfo.year, monthInfo.month));
+                  {/* Cells for each day */}
+                  {Array.from({ length: 31 }, (_, dayIndex) => {
+                    const day = dayIndex + 1;
                     const dateStr = day <= daysInMonth 
                       ? format(new Date(monthInfo.year, monthInfo.month, day), 'yyyy-MM-dd')
                       : null;
@@ -110,7 +114,7 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
                       return (
                         <div 
                           key={`empty-${monthIdx}-${day}`} 
-                          className="w-8 h-6"
+                          className="w-7 h-6"
                         ></div>
                       );
                     }
@@ -120,7 +124,7 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div
-                              className={`w-8 h-6 border border-border cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:scale-110 ${getColorIntensity(count)}`}
+                              className={`w-7 h-6 border border-border cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:scale-110 ${getColorIntensity(count)}`}
                             ></div>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
