@@ -16,16 +16,22 @@ export async function calculateReconciliation(
   startDate: Date,
   endDate: Date
 ): Promise<ReconciliationResult> {
+  console.log('🔄 Starting reconciliation...', { startDate, endDate });
+  const startTime = Date.now();
+  
   const startDateStr = format(startDate, 'yyyy-MM-dd');
   const endDateStr = format(endDate, 'yyyy-MM-dd');
 
   // Step 1: Get all Delhi-based employees
+  console.log('📋 Step 1: Fetching Delhi employees...');
   const { data: delhiEmployees, error: empError } = await supabase
     .from('employees')
     .select('id, empl_no, name, location')
     .eq('location', 'Delhi');
 
   if (empError) throw empError;
+  console.log(`✅ Found ${delhiEmployees?.length || 0} Delhi employees`);
+  
   if (!delhiEmployees || delhiEmployees.length === 0) {
     return {
       totalProcessed: 0,
@@ -38,6 +44,7 @@ export async function calculateReconciliation(
   const delhiEmployeeIds = delhiEmployees.map(e => e.id);
 
   // Step 2: Get biometric attendance records for Delhi employees with "Absent" status
+  console.log('📋 Step 2: Fetching biometric absence records...');
   const { data: biometricRecords, error: bioError } = await supabase
     .from('biometric_attendance')
     .select('*')
@@ -47,8 +54,10 @@ export async function calculateReconciliation(
     .lte('attendance_date', endDateStr);
 
   if (bioError) throw bioError;
+  console.log(`✅ Found ${biometricRecords?.length || 0} absence records to process`);
 
   // Step 3: Batch-load all leaves for Delhi employees in date range
+  console.log('📋 Step 3: Batch-loading leave records...');
   const { data: allLeaves, error: leaveError } = await supabase
     .from('leave_records')
     .select('employee_id, leave_type, approval_status, from_date, to_date')
@@ -58,8 +67,10 @@ export async function calculateReconciliation(
     .in('approval_status', ['Approved', 'Pending']);
 
   if (leaveError) throw leaveError;
+  console.log(`✅ Loaded ${allLeaves?.length || 0} leave records`);
 
   // Step 4: Batch-load all regularizations for Delhi employees in date range
+  console.log('📋 Step 4: Batch-loading regularization records...');
   const { data: allRegularizations, error: regError } = await supabase
     .from('attendance_regularization')
     .select('employee_id, attendance_date, reason')
@@ -68,8 +79,10 @@ export async function calculateReconciliation(
     .lte('attendance_date', endDateStr);
 
   if (regError) throw regError;
+  console.log(`✅ Loaded ${allRegularizations?.length || 0} regularization records`);
 
   // Create Maps for O(1) lookups
+  console.log('🗺️ Step 5: Building lookup maps...');
   // Map: employeeId -> array of leave records
   const leaveMap = new Map<string, typeof allLeaves>();
   allLeaves?.forEach(leave => {
@@ -88,7 +101,8 @@ export async function calculateReconciliation(
   let unapprovedCount = 0;
   const reconciliationRecords = [];
 
-  // Step 5: Process each absence record with in-memory lookups
+  // Step 6: Process each absence record with in-memory lookups
+  console.log('⚡ Step 6: Processing absence records with in-memory lookups...');
   for (const record of biometricRecords || []) {
     totalProcessed++;
 
@@ -128,7 +142,10 @@ export async function calculateReconciliation(
     });
   }
 
-  // Step 6: Batch upsert all reconciliation records
+  console.log(`✅ Processed ${totalProcessed} records, found ${unapprovedCount} unapproved absences`);
+  
+  // Step 7: Batch upsert all reconciliation records
+  console.log(`💾 Step 7: Batch upserting ${reconciliationRecords.length} reconciliation records...`);
   if (reconciliationRecords.length > 0) {
     const { error: upsertError } = await supabase
       .from('attendance_reconciliation')
@@ -137,7 +154,11 @@ export async function calculateReconciliation(
       });
 
     if (upsertError) throw upsertError;
+    console.log('✅ Batch upsert completed successfully');
   }
+
+  const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+  console.log(`🎉 Reconciliation completed in ${totalTime}s`);
 
   return {
     totalProcessed,
