@@ -48,58 +48,91 @@ export async function calculateReconciliation(
 
   if (bioError) throw bioError;
 
+  // Step 3: Batch-load all leaves for Delhi employees in date range
+  const { data: allLeaves, error: leaveError } = await supabase
+    .from('leave_records')
+    .select('employee_id, leave_type, approval_status, from_date, to_date')
+    .in('employee_id', delhiEmployeeIds)
+    .lte('from_date', endDateStr)
+    .gte('to_date', startDateStr)
+    .in('approval_status', ['Approved', 'Pending']);
+
+  if (leaveError) throw leaveError;
+
+  // Step 4: Batch-load all regularizations for Delhi employees in date range
+  const { data: allRegularizations, error: regError } = await supabase
+    .from('attendance_regularization')
+    .select('employee_id, attendance_date, reason')
+    .in('employee_id', delhiEmployeeIds)
+    .gte('attendance_date', startDateStr)
+    .lte('attendance_date', endDateStr);
+
+  if (regError) throw regError;
+
+  // Create Maps for O(1) lookups
+  // Map: employeeId -> array of leave records
+  const leaveMap = new Map<string, typeof allLeaves>();
+  allLeaves?.forEach(leave => {
+    const existing = leaveMap.get(leave.employee_id) || [];
+    leaveMap.set(leave.employee_id, [...existing, leave]);
+  });
+
+  // Map: "employeeId|date" -> regularization record
+  const regMap = new Map<string, typeof allRegularizations[0]>();
+  allRegularizations?.forEach(reg => {
+    const key = `${reg.employee_id}|${reg.attendance_date}`;
+    regMap.set(key, reg);
+  });
+
   let totalProcessed = 0;
   let unapprovedCount = 0;
+  const reconciliationRecords = [];
 
-  // Step 3: For each absent record, check leave/regularization coverage
+  // Step 5: Process each absence record with in-memory lookups
   for (const record of biometricRecords || []) {
     totalProcessed++;
 
-    // Check for approved or pending leave
-    const { data: leaves, error: leaveError } = await supabase
-      .from('leave_records')
-      .select('leave_type, approval_status')
-      .eq('employee_id', record.employee_id)
-      .lte('from_date', record.attendance_date)
-      .gte('to_date', record.attendance_date)
-      .in('approval_status', ['Approved', 'Pending']);
+    // Check for leave coverage using in-memory map
+    const employeeLeaves = leaveMap.get(record.employee_id) || [];
+    const matchingLeave = employeeLeaves.find(leave => 
+      leave.from_date <= record.attendance_date && 
+      leave.to_date >= record.attendance_date
+    );
 
-    if (leaveError) throw leaveError;
+    const hasLeave = !!matchingLeave;
+    const leaveType = matchingLeave?.leave_type || null;
 
-    const hasLeave = leaves && leaves.length > 0;
-    const leaveType = hasLeave ? leaves[0].leave_type : null;
+    // Check for regularization using in-memory map
+    const regKey = `${record.employee_id}|${record.attendance_date}`;
+    const regularization = regMap.get(regKey);
 
-    // Check for regularization
-    const { data: regularizations, error: regError } = await supabase
-      .from('attendance_regularization')
-      .select('reason')
-      .eq('employee_id', record.employee_id)
-      .eq('attendance_date', record.attendance_date);
-
-    if (regError) throw regError;
-
-    const hasRegularization = regularizations && regularizations.length > 0;
-    const regularizationReason = hasRegularization ? regularizations[0].reason : null;
+    const hasRegularization = !!regularization;
+    const regularizationReason = regularization?.reason || null;
 
     const isUnapproved = !hasLeave && !hasRegularization;
     if (isUnapproved) {
       unapprovedCount++;
     }
 
-    // Upsert reconciliation result
+    // Collect reconciliation record for batch upsert
+    reconciliationRecords.push({
+      employee_id: record.employee_id,
+      attendance_date: record.attendance_date,
+      is_unapproved_absence: isUnapproved,
+      biometric_status: record.status,
+      has_leave: hasLeave,
+      has_regularization: hasRegularization,
+      leave_type: leaveType,
+      regularization_reason: regularizationReason,
+      calculated_at: new Date().toISOString()
+    });
+  }
+
+  // Step 6: Batch upsert all reconciliation records
+  if (reconciliationRecords.length > 0) {
     const { error: upsertError } = await supabase
       .from('attendance_reconciliation')
-      .upsert({
-        employee_id: record.employee_id,
-        attendance_date: record.attendance_date,
-        is_unapproved_absence: isUnapproved,
-        biometric_status: record.status,
-        has_leave: hasLeave,
-        has_regularization: hasRegularization,
-        leave_type: leaveType,
-        regularization_reason: regularizationReason,
-        calculated_at: new Date().toISOString()
-      }, {
+      .upsert(reconciliationRecords, {
         onConflict: 'employee_id,attendance_date'
       });
 
