@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarIcon, RefreshCw, Info, MapPin } from 'lucide-react';
 import { format, startOfYear, endOfYear, subYears, startOfMonth, endOfMonth } from 'date-fns';
 import { useUnapprovedAbsences, useEmployeeAbsenceDetails } from '@/hooks/useUnapprovedAbsences';
@@ -22,13 +23,14 @@ export const UnapprovedAbsences = () => {
 
   const [startDate, setStartDate] = useState<Date>(defaultStartDate);
   const [endDate, setEndDate] = useState<Date>(defaultEndDate);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [selectedEmployee, setSelectedEmployee] = useState<{
     id: string;
     name: string;
     code: string;
   } | null>(null);
 
-  const { data, isLoading, refetch } = useUnapprovedAbsences(startDate, endDate);
+  const { data, isLoading, refetch } = useUnapprovedAbsences(startDate, endDate, statusFilter);
   const { data: employeeDetails } = useEmployeeAbsenceDetails(
     selectedEmployee?.id || '',
     startDate,
@@ -44,6 +46,7 @@ export const UnapprovedAbsences = () => {
   const resetFilters = () => {
     setStartDate(defaultStartDate);
     setEndDate(defaultEndDate);
+    setStatusFilter('active');
   };
 
   return (
@@ -137,6 +140,20 @@ export const UnapprovedAbsences = () => {
                   <Calendar mode="single" selected={endDate} onSelect={(date) => date && setEndDate(date)} />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Employee Status</label>
+              <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <Button onClick={resetFilters} variant="outline">

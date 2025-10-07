@@ -2,18 +2,25 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
-export const useUnapprovedAbsences = (startDate?: Date, endDate?: Date) => {
+export const useUnapprovedAbsences = (startDate?: Date, endDate?: Date, statusFilter: 'all' | 'active' | 'inactive' = 'active') => {
   return useQuery({
-    queryKey: ['unapproved-absences', startDate, endDate],
+    queryKey: ['unapproved-absences', startDate, endDate, statusFilter],
     queryFn: async () => {
       let query = supabase
         .from('attendance_reconciliation')
         .select(`
           *,
-          employees!inner(id, empl_no, name, location)
+          employees!inner(id, empl_no, name, location, status)
         `)
         .eq('is_unapproved_absence', true)
         .eq('employees.location', 'Delhi');
+
+      // Apply status filter
+      if (statusFilter === 'active') {
+        query = query.in('employees.status', ['Active', 'Serving Notice Period']);
+      } else if (statusFilter === 'inactive') {
+        query = query.not('employees.status', 'in', '(Active,Serving Notice Period)');
+      }
 
       if (startDate) {
         query = query.gte('attendance_date', format(startDate, 'yyyy-MM-dd'));
