@@ -388,7 +388,13 @@ const LeaveAttendance = () => {
 
       for (const row of jsonData as any[]) {
         try {
-          const status = row['Status']?.toString().trim();
+          // Normalize column names by creating a case-insensitive lookup
+          const normalizedRow: Record<string, any> = {};
+          for (const [key, value] of Object.entries(row)) {
+            normalizedRow[key.toLowerCase().trim().replace(/\s+/g, '')] = value;
+          }
+
+          const status = normalizedRow['status']?.toString().trim();
           
           // Skip Weekly Off and Holiday rows
           if (status === 'Weekly Off' || status === 'Holiday') {
@@ -396,16 +402,15 @@ const LeaveAttendance = () => {
             continue;
           }
 
-          // Try multiple possible column names for employee code
+          // Try multiple possible column names for employee code (normalized)
           const employeeCodeRaw = (
-            row['Employee Code'] || 
-            row['Emp Code'] || 
-            row['Emp. Code'] || 
-            row['EmployeeCode'] || 
-            row['Employee ID'] || 
-            row['Empl No'] ||
-            row['employee_code'] ||
-            row['emp_code']
+            normalizedRow['employeecode'] || 
+            normalizedRow['empcode'] || 
+            normalizedRow['emp.code'] || 
+            normalizedRow['employeeid'] || 
+            normalizedRow['emplno'] ||
+            normalizedRow['employee_code'] ||
+            normalizedRow['emp_code']
           )?.toString().trim();
           
           if (!employeeCodeRaw) {
@@ -447,7 +452,7 @@ const LeaveAttendance = () => {
           const biometricRecord = {
             employee_id: employee.id,
             employee_code: employeeCode,
-            attendance_date: parseDate(row['Date']),
+            attendance_date: parseDate(normalizedRow['date'] || row['Date']),
             in_time: parseTime(row['In Time']),
             out_time: parseTime(row['Out Time']),
             duration: row['Duration']?.toString() || null,
