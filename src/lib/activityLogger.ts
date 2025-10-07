@@ -6,7 +6,7 @@ type EntityType = 'employee' | 'user';
 interface LogActivityParams {
   actionType: ActionType;
   entityType: EntityType;
-  entityId: string;
+  entityId?: string | null; // Optional for bulk operations
   description: string;
   metadata?: Record<string, any>;
 }
@@ -32,7 +32,7 @@ export async function logActivity({
         user_id: user.id,
         action_type: actionType,
         entity_type: entityType,
-        entity_id: entityId,
+        entity_id: entityId || null,
         description,
         metadata
       });

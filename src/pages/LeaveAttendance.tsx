@@ -194,7 +194,6 @@ const LeaveAttendance = () => {
         await logActivity({
           actionType: 'create',
           entityType: 'employee',
-          entityId: 'bulk',
           description: `Imported ${results.valid} leave records`
         });
       }
@@ -511,7 +510,6 @@ const LeaveAttendance = () => {
         await logActivity({
           actionType: 'create',
           entityType: 'employee',
-          entityId: 'bulk',
           description: `Imported ${results.valid} biometric attendance records`
         });
       }
