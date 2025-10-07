@@ -47,6 +47,53 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_reconciliation: {
+        Row: {
+          attendance_date: string
+          biometric_status: string
+          calculated_at: string
+          employee_id: string
+          has_leave: boolean
+          has_regularization: boolean
+          id: string
+          is_unapproved_absence: boolean
+          leave_type: string | null
+          regularization_reason: string | null
+        }
+        Insert: {
+          attendance_date: string
+          biometric_status: string
+          calculated_at?: string
+          employee_id: string
+          has_leave?: boolean
+          has_regularization?: boolean
+          id?: string
+          is_unapproved_absence?: boolean
+          leave_type?: string | null
+          regularization_reason?: string | null
+        }
+        Update: {
+          attendance_date?: string
+          biometric_status?: string
+          calculated_at?: string
+          employee_id?: string
+          has_leave?: boolean
+          has_regularization?: boolean
+          id?: string
+          is_unapproved_absence?: boolean
+          leave_type?: string | null
+          regularization_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_reconciliation_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_regularization: {
         Row: {
           approval_status: string
@@ -84,6 +131,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "attendance_regularization_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biometric_attendance: {
+        Row: {
+          attendance_date: string
+          created_at: string
+          duration: string | null
+          employee_code: string
+          employee_id: string
+          id: string
+          in_time: string | null
+          out_time: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attendance_date: string
+          created_at?: string
+          duration?: string | null
+          employee_code: string
+          employee_id: string
+          id?: string
+          in_time?: string | null
+          out_time?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          attendance_date?: string
+          created_at?: string
+          duration?: string | null
+          employee_code?: string
+          employee_id?: string
+          id?: string
+          in_time?: string | null
+          out_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biometric_attendance_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"

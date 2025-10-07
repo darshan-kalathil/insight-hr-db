@@ -70,6 +70,10 @@ export const EmployeeLeaveRegularizationChart = () => {
   }
   if (linesToShow.length === 0) {
     linesToShow.push('Total Leaves', 'Total Regularizations');
+    // Add unapproved absences for Delhi employees
+    if (analytics?.isDelhiEmployee) {
+      linesToShow.push('Unapproved Absences');
+    }
   }
 
   // Generate distinct shades for multiple lines of same category
@@ -77,6 +81,7 @@ export const EmployeeLeaveRegularizationChart = () => {
     const isReg = type.startsWith('reg_');
     if (type === 'Total Leaves') return 'hsl(0 84% 60%)';
     if (type === 'Total Regularizations') return 'hsl(217 91% 60%)';
+    if (type === 'Unapproved Absences') return 'hsl(142 76% 36%)'; // Green for unapproved
     
     if (isReg) {
       // Blue shades for regularizations
@@ -227,6 +232,11 @@ export const EmployeeLeaveRegularizationChart = () => {
               ? `Leave & Regularization Trends - ${selectedEmployee.name}`
               : 'Leave & Regularization Trends'}
           </CardTitle>
+          {selectedEmployee && !analytics?.isDelhiEmployee && (
+            <p className="text-sm text-muted-foreground mt-2">
+              This employee is not based in Delhi. Unapproved absences data is only available for Delhi-based employees.
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {!selectedEmployeeId ? (

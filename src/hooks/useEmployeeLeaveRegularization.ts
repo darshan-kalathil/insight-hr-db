@@ -14,6 +14,15 @@ export const useEmployeeLeaveRegularization = (
     queryFn: async () => {
       if (!employeeId) return null;
 
+      // Check if employee is from Delhi for unapproved absences
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('location')
+        .eq('id', employeeId)
+        .single();
+
+      const isDelhiEmployee = employee?.location === 'Delhi';
+
       // Fetch leave records
       let leaveQuery = supabase
         .from('leave_records')
@@ -56,6 +65,26 @@ export const useEmployeeLeaveRegularization = (
       const { data: regularizations, error: regError } = await regQuery;
       if (regError) throw regError;
 
+      // Fetch unapproved absences for Delhi employees only
+      let unapprovedData: any[] = [];
+      if (isDelhiEmployee) {
+        let unapprovedQuery = supabase
+          .from('attendance_reconciliation')
+          .select('*')
+          .eq('employee_id', employeeId)
+          .eq('is_unapproved_absence', true);
+
+        if (startDate) {
+          unapprovedQuery = unapprovedQuery.gte('attendance_date', format(startDate, 'yyyy-MM-dd'));
+        }
+        if (endDate) {
+          unapprovedQuery = unapprovedQuery.lte('attendance_date', format(endDate, 'yyyy-MM-dd'));
+        }
+
+        const { data: absences } = await unapprovedQuery;
+        unapprovedData = absences || [];
+      }
+
       // Process monthly data - structure by month and type
       const monthlyData: Record<string, Record<string, number>> = {};
 
@@ -92,6 +121,15 @@ export const useEmployeeLeaveRegularization = (
         monthlyData[month]['Total Regularizations'] = (monthlyData[month]['Total Regularizations'] || 0) + 1;
       });
 
+      // Process unapproved absences - each is 1 day
+      unapprovedData.forEach(absence => {
+        const month = format(new Date(absence.attendance_date), 'MMM yyyy');
+        if (!monthlyData[month]) {
+          monthlyData[month] = {};
+        }
+        monthlyData[month]['Unapproved Absences'] = (monthlyData[month]['Unapproved Absences'] || 0) + 1;
+      });
+
       // Convert to array format for recharts
       const monthlyTrends = Object.entries(monthlyData)
         .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
@@ -104,8 +142,10 @@ export const useEmployeeLeaveRegularization = (
         monthlyTrends,
         totalLeaveDays: leaves?.reduce((sum, leave) => sum + (Number(leave.number_of_days) || 0), 0) || 0,
         totalRegularizationDays: regularizations?.length || 0,
+        totalUnapprovedAbsences: unapprovedData.length,
         allLeaveTypes: Array.from(allLeaveTypes),
-        allRegReasons: Array.from(allRegReasons)
+        allRegReasons: Array.from(allRegReasons),
+        isDelhiEmployee
       };
     },
     enabled: !!employeeId

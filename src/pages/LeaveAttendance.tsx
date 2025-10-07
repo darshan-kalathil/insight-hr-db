@@ -11,6 +11,9 @@ import { logActivity } from '@/lib/activityLogger';
 import { LeaveAnalytics } from '@/components/LeaveAnalytics';
 import { RegularizationAnalytics } from '@/components/RegularizationAnalytics';
 import { EmployeeLeaveRegularizationChart } from '@/components/EmployeeLeaveRegularizationChart';
+import { UnapprovedAbsences } from '@/components/UnapprovedAbsences';
+import { calculateReconciliation } from '@/lib/reconciliationService';
+import { startOfYear, endOfYear, subMonths } from 'date-fns';
 
 type ParseResult = {
   total: number;
@@ -24,8 +27,10 @@ type ParseResult = {
 const LeaveAttendance = () => {
   const [leaveResult, setLeaveResult] = useState<ParseResult | null>(null);
   const [attendanceResult, setAttendanceResult] = useState<ParseResult | null>(null);
+  const [biometricResult, setBiometricResult] = useState<ParseResult | null>(null);
   const [parsingLeave, setParsingLeave] = useState(false);
   const [parsingAttendance, setParsingAttendance] = useState(false);
+  const [parsingBiometric, setParsingBiometric] = useState(false);
   const { toast } = useToast();
 
   const parseDate = (dateValue: any): string | null => {
@@ -357,6 +362,151 @@ const LeaveAttendance = () => {
     }
   };
 
+  const handleBiometricUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setParsingBiometric(true);
+    setBiometricResult(null);
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      const results: ParseResult = {
+        total: jsonData.length,
+        valid: 0,
+        skipped: 0,
+        errors: 0,
+        errorDetails: [],
+        data: []
+      };
+
+      let nonDelhiSkipped = 0;
+
+      for (const row of jsonData as any[]) {
+        try {
+          const status = row['Status']?.toString().trim();
+          
+          // Skip Weekly Off and Holiday rows
+          if (status === 'Weekly Off' || status === 'Holiday') {
+            results.skipped++;
+            continue;
+          }
+
+          const employeeCodeRaw = row['Employee Code']?.toString().trim();
+          
+          if (!employeeCodeRaw) {
+            results.errors++;
+            results.errorDetails.push(`Missing Employee Code field`);
+            continue;
+          }
+
+          // Transform ONDCExxx to ONDC-E-xxx format
+          const match = employeeCodeRaw.match(/^ONDCE(\d{3})$/);
+          if (!match) {
+            results.skipped++;
+            continue; // Skip non-ONDCE format codes
+          }
+
+          const employeeCode = `ONDC-E-${match[1]}`;
+
+          // Check if employee exists and is from Delhi
+          const { data: employee, error: employeeError } = await supabase
+            .from('employees')
+            .select('id, location')
+            .eq('empl_no', employeeCode)
+            .maybeSingle();
+
+          if (employeeError || !employee) {
+            results.errors++;
+            results.errorDetails.push(`Employee ${employeeCode} not found in database`);
+            continue;
+          }
+
+          // Skip non-Delhi employees
+          if (employee.location !== 'Delhi') {
+            nonDelhiSkipped++;
+            results.skipped++;
+            continue;
+          }
+
+          const biometricRecord = {
+            employee_id: employee.id,
+            employee_code: employeeCode,
+            attendance_date: parseDate(row['Date']),
+            in_time: parseTime(row['In Time']),
+            out_time: parseTime(row['Out Time']),
+            duration: row['Duration']?.toString() || null,
+            status: status || 'Present'
+          };
+
+          results.data.push(biometricRecord);
+          results.valid++;
+        } catch (error: any) {
+          results.errors++;
+          results.errorDetails.push(`Error parsing row: ${error.message}`);
+        }
+      }
+
+      // Insert data into database
+      if (results.data.length > 0) {
+        for (const record of results.data) {
+          const { error: upsertError } = await supabase
+            .from('biometric_attendance')
+            .upsert(record, {
+              onConflict: 'employee_id,attendance_date'
+            });
+
+          if (upsertError) {
+            results.errors++;
+            results.errorDetails.push(`Failed to save biometric record: ${upsertError.message}`);
+          }
+        }
+
+        // Trigger reconciliation calculation
+        const dateRange = results.data.reduce(
+          (acc, record) => {
+            const date = new Date(record.attendance_date);
+            return {
+              min: !acc.min || date < acc.min ? date : acc.min,
+              max: !acc.max || date > acc.max ? date : acc.max
+            };
+          },
+          { min: null as Date | null, max: null as Date | null }
+        );
+
+        if (dateRange.min && dateRange.max) {
+          await calculateReconciliation(dateRange.min, dateRange.max);
+        }
+
+        await logActivity({
+          actionType: 'create',
+          entityType: 'employee',
+          entityId: 'bulk',
+          description: `Imported ${results.valid} biometric attendance records`
+        });
+      }
+
+      setBiometricResult(results);
+      toast({
+        title: 'Biometric Data Imported',
+        description: `Valid: ${results.valid}, Skipped: ${results.skipped} (${nonDelhiSkipped} non-Delhi employees), Errors: ${results.errors}`
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Parse Failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setParsingBiometric(false);
+      event.target.value = '';
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -372,6 +522,7 @@ const LeaveAttendance = () => {
             <TabsTrigger value="uploads">Uploads</TabsTrigger>
             <TabsTrigger value="leave-analytics">Leave Analytics</TabsTrigger>
             <TabsTrigger value="regularization-analytics">Regularization Analytics</TabsTrigger>
+            <TabsTrigger value="unapproved-absences">Unapproved Absences</TabsTrigger>
           </TabsList>
 
           <TabsContent value="uploads" className="space-y-4">
@@ -379,7 +530,7 @@ const LeaveAttendance = () => {
             <EmployeeLeaveRegularizationChart />
 
             {/* Upload Buttons at Bottom */}
-            <div className="grid gap-4 md:grid-cols-2 mt-8">
+            <div className="grid gap-4 md:grid-cols-3 mt-8">
               {/* Leave Records Upload */}
               <Card>
                 <CardHeader>
@@ -511,6 +662,72 @@ const LeaveAttendance = () => {
                 )}
               </CardContent>
               </Card>
+
+              {/* Biometric Attendance Upload */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upload Biometric Attendance Data</CardTitle>
+                  <CardDescription>
+                    Upload the daily attendance Excel file. Weekly offs and holidays will be automatically excluded. Only Delhi-based employees will be processed.
+                  </CardDescription>
+                </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleBiometricUpload}
+                    disabled={parsingBiometric}
+                    className="hidden"
+                    id="biometric-upload"
+                  />
+                  <label htmlFor="biometric-upload">
+                    <Button asChild disabled={parsingBiometric}>
+                      <span className="cursor-pointer">
+                        <Upload className="mr-2 h-4 w-4" />
+                        {parsingBiometric ? 'Parsing...' : 'Upload Biometric Data'}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+
+                {biometricResult && (
+                  <div className="space-y-3 mt-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="font-medium">{biometricResult.valid} valid records parsed (Delhi employees)</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <span className="font-medium">{biometricResult.skipped} records skipped (weekly offs, holidays, non-Delhi)</span>
+                    </div>
+                    {biometricResult.errors > 0 && (
+                      <>
+                        <div className="flex items-center gap-2 text-sm">
+                          <XCircle className="h-4 w-4 text-red-600" />
+                          <span className="font-medium">{biometricResult.errors} errors</span>
+                        </div>
+                        {biometricResult.errorDetails.length > 0 && (
+                          <div className="mt-2 p-3 bg-destructive/10 rounded-md">
+                            <p className="text-sm font-medium mb-2">Error Details:</p>
+                            <ul className="text-xs space-y-1">
+                              {biometricResult.errorDetails.slice(0, 5).map((error, index) => (
+                                <li key={index} className="text-muted-foreground">{error}</li>
+                              ))}
+                              {biometricResult.errorDetails.length > 5 && (
+                                <li className="text-muted-foreground">
+                                  ... and {biometricResult.errorDetails.length - 5} more errors
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
@@ -520,6 +737,10 @@ const LeaveAttendance = () => {
 
           <TabsContent value="regularization-analytics">
             <RegularizationAnalytics />
+          </TabsContent>
+
+          <TabsContent value="unapproved-absences">
+            <UnapprovedAbsences />
           </TabsContent>
         </Tabs>
       </div>
