@@ -396,11 +396,22 @@ const LeaveAttendance = () => {
             continue;
           }
 
-          const employeeCodeRaw = row['Employee Code']?.toString().trim();
+          // Try multiple possible column names for employee code
+          const employeeCodeRaw = (
+            row['Employee Code'] || 
+            row['Emp Code'] || 
+            row['Emp. Code'] || 
+            row['EmployeeCode'] || 
+            row['Employee ID'] || 
+            row['Empl No'] ||
+            row['employee_code'] ||
+            row['emp_code']
+          )?.toString().trim();
           
           if (!employeeCodeRaw) {
             results.errors++;
-            results.errorDetails.push(`Missing Employee Code field`);
+            const availableColumns = Object.keys(row).join(', ');
+            results.errorDetails.push(`Missing Employee Code field. Available columns: ${availableColumns}`);
             continue;
           }
 
