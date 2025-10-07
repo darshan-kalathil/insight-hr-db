@@ -384,6 +384,20 @@ const LeaveAttendance = () => {
         data: []
       };
 
+      // Batch-load all employees for fast in-memory lookups
+      const { data: allEmployees, error: employeesError } = await supabase
+        .from('employees')
+        .select('id, empl_no, location');
+
+      if (employeesError) {
+        throw new Error(`Failed to load employees: ${employeesError.message}`);
+      }
+
+      // Create a Map for O(1) lookups by employee code
+      const employeeMap = new Map(
+        allEmployees?.map(emp => [emp.empl_no, { id: emp.id, location: emp.location }]) || []
+      );
+
       let nonDelhiSkipped = 0;
 
       for (const row of jsonData as any[]) {
@@ -429,14 +443,10 @@ const LeaveAttendance = () => {
 
           const employeeCode = `ONDC-E-${match[1]}`;
 
-          // Check if employee exists and is from Delhi
-          const { data: employee, error: employeeError } = await supabase
-            .from('employees')
-            .select('id, location')
-            .eq('empl_no', employeeCode)
-            .maybeSingle();
+          // Look up employee from in-memory map
+          const employee = employeeMap.get(employeeCode);
 
-          if (employeeError || !employee) {
+          if (!employee) {
             results.errors++;
             results.errorDetails.push(`Employee ${employeeCode} not found in database`);
             continue;
