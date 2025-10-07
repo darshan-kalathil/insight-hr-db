@@ -43,18 +43,58 @@ export async function calculateReconciliation(
 
   const delhiEmployeeIds = delhiEmployees.map(e => e.id);
 
-  // Step 2: Get biometric attendance records for Delhi employees with "Absent" status
-  console.log('📋 Step 2: Fetching biometric absence records...');
+  // Step 2: Get ALL biometric attendance records for Delhi employees (including Present)
+  // We'll identify absences by finding dates without biometric records
+  console.log('📋 Step 2: Fetching all biometric attendance records...');
   const { data: biometricRecords, error: bioError } = await supabase
     .from('biometric_attendance')
     .select('*')
     .in('employee_id', delhiEmployeeIds)
-    .eq('status', 'Absent')
     .gte('attendance_date', startDateStr)
     .lte('attendance_date', endDateStr);
 
   if (bioError) throw bioError;
-  console.log(`✅ Found ${biometricRecords?.length || 0} absence records to process`);
+  console.log(`✅ Found ${biometricRecords?.length || 0} biometric records`);
+
+  // Build a set of "employeeId|date" for all present days
+  const presentDaysSet = new Set<string>();
+  biometricRecords?.forEach(record => {
+    presentDaysSet.add(`${record.employee_id}|${record.attendance_date}`);
+  });
+
+  // Generate all working dates in range (excluding Sundays for now - can be enhanced)
+  const allDates: string[] = [];
+  let currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const dayOfWeek = currentDate.getDay();
+    if (dayOfWeek !== 0) { // Exclude Sundays
+      allDates.push(format(currentDate, 'yyyy-MM-dd'));
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  // Find absence records (employee-date combinations without biometric entry)
+  const absenceRecords: Array<{
+    employee_id: string;
+    attendance_date: string;
+    status: string;
+  }> = [];
+
+  for (const emp of delhiEmployees) {
+    for (const date of allDates) {
+      const key = `${emp.id}|${date}`;
+      if (!presentDaysSet.has(key)) {
+        absenceRecords.push({
+          employee_id: emp.id,
+          attendance_date: date,
+          status: 'Absent'
+        });
+      }
+    }
+  }
+
+  console.log(`✅ Identified ${absenceRecords.length} absence records (missing biometric entries)`);
+
 
   // Step 3: Batch-load all leaves for Delhi employees in date range
   console.log('📋 Step 3: Batch-loading leave records...');
@@ -103,7 +143,7 @@ export async function calculateReconciliation(
 
   // Step 6: Process each absence record with in-memory lookups
   console.log('⚡ Step 6: Processing absence records with in-memory lookups...');
-  for (const record of biometricRecords || []) {
+  for (const record of absenceRecords || []) {
     totalProcessed++;
 
     // Check for leave coverage using in-memory map
