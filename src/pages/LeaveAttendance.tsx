@@ -14,6 +14,7 @@ import { EmployeeLeaveRegularizationChart } from '@/components/EmployeeLeaveRegu
 import { UnapprovedAbsences } from '@/components/UnapprovedAbsences';
 import { calculateReconciliation } from '@/lib/reconciliationService';
 import { startOfYear, endOfYear, subMonths } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 
 type ParseResult = {
   total: number;
@@ -32,6 +33,7 @@ const LeaveAttendance = () => {
   const [parsingAttendance, setParsingAttendance] = useState(false);
   const [parsingBiometric, setParsingBiometric] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const parseDate = (dateValue: any): string | null => {
     if (!dateValue) return null;
@@ -505,6 +507,8 @@ const LeaveAttendance = () => {
 
         if (dateRange.min && dateRange.max) {
           await calculateReconciliation(dateRange.min, dateRange.max);
+          // Invalidate unapproved absences queries to refresh the UI
+          queryClient.invalidateQueries({ queryKey: ['unapproved-absences'] });
         }
 
         await logActivity({
