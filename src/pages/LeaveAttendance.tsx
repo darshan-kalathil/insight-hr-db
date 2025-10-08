@@ -416,7 +416,7 @@ const LeaveAttendance = () => {
             normalizedRow[key.toLowerCase().trim().replace(/\s+/g, '')] = value;
           }
 
-          const status = normalizedRow['status']?.toString().trim();
+          const status = (normalizedRow['status'] || normalizedRow['attendance'])?.toString().trim();
           
           // Skip Weekly Off and Holiday rows
           if (status === 'Weekly Off' || status === 'Holiday') {
