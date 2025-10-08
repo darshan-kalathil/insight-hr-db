@@ -15,6 +15,7 @@ import { UnapprovedAbsences } from '@/components/UnapprovedAbsences';
 import { calculateReconciliation } from '@/lib/reconciliationService';
 import { startOfYear, endOfYear, subMonths } from 'date-fns';
 import { useQueryClient } from '@tanstack/react-query';
+import { calculateDuration } from '@/lib/utils';
 
 type ParseResult = {
   total: number;
@@ -460,13 +461,16 @@ const LeaveAttendance = () => {
             continue;
           }
 
+          const inTime = parseTime(row['In Time']);
+          const outTime = parseTime(row['Out Time']);
+          
           const biometricRecord = {
             employee_id: employee.id,
             employee_code: employeeCode,
             attendance_date: parseDate(normalizedRow['date'] || row['Date']),
-            in_time: parseTime(row['In Time']),
-            out_time: parseTime(row['Out Time']),
-            duration: row['Duration']?.toString() || null,
+            in_time: inTime,
+            out_time: outTime,
+            duration: calculateDuration(inTime, outTime),
             status: status || 'Present'
           };
 

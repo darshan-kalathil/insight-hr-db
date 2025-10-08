@@ -36,3 +36,34 @@ export function getCurrentFinancialYear(): { startDate: Date; endDate: Date } {
     endDate: new Date(fyEndYear, 2, 31), // March 31
   };
 }
+
+export function calculateDuration(inTime: string | null, outTime: string | null): string | null {
+  // If no in time, no duration
+  if (!inTime) return null;
+  
+  // If in time but no out time, use 7 hours
+  if (!outTime) return "7:00:00";
+  
+  // Parse times
+  const [inHours, inMinutes, inSeconds] = inTime.split(':').map(Number);
+  const [outHours, outMinutes, outSeconds] = outTime.split(':').map(Number);
+  
+  // Convert to total minutes
+  const inTotalMinutes = inHours * 60 + inMinutes + (inSeconds / 60);
+  const outTotalMinutes = outHours * 60 + outMinutes + (outSeconds / 60);
+  
+  // Calculate difference
+  let diffMinutes = outTotalMinutes - inTotalMinutes;
+  
+  // Handle negative difference (out time is next day)
+  if (diffMinutes < 0) {
+    diffMinutes += 24 * 60;
+  }
+  
+  // Convert back to hours:minutes:seconds
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = Math.floor(diffMinutes % 60);
+  const seconds = Math.floor((diffMinutes % 1) * 60);
+  
+  return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
