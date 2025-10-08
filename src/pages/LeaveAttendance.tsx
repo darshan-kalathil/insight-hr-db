@@ -69,19 +69,30 @@ const LeaveAttendance = () => {
     if (!timeValue) return null;
     
     if (typeof timeValue === 'string') {
-      // Handle "08:35 AM" format
-      const match = timeValue.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-      if (match) {
-        let hours = parseInt(match[1]);
-        const minutes = match[2];
-        const period = match[3].toUpperCase();
+      const trimmed = timeValue.trim();
+      
+      // Handle "08:35 AM" or "08:35 PM" format
+      const ampmMatch = trimmed.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (ampmMatch) {
+        let hours = parseInt(ampmMatch[1]);
+        const minutes = ampmMatch[2];
+        const period = ampmMatch[3].toUpperCase();
         
         if (period === 'PM' && hours !== 12) hours += 12;
         if (period === 'AM' && hours === 12) hours = 0;
         
         return `${String(hours).padStart(2, '0')}:${minutes}:00`;
       }
+      
+      // Handle 24-hour format "08:35" or "17:45"
+      const time24Match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+      if (time24Match) {
+        const hours = String(parseInt(time24Match[1])).padStart(2, '0');
+        const minutes = time24Match[2];
+        return `${hours}:${minutes}:00`;
+      }
     }
+    
     return null;
   };
 
