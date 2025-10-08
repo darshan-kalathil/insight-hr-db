@@ -45,10 +45,18 @@ const LeaveAttendance = () => {
       return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
     }
 
-    // Handle string dates (e.g., "22-Oct-2025" or "29-Sep-2025 17:58:37")
+    // Handle string dates
     if (typeof dateValue === 'string') {
-      // Extract just the date part if datetime format
-      const dateOnly = dateValue.split(' ')[0];
+      const dateOnly = dateValue.split(' ')[0].trim();
+      
+      // Try DD-MM-YYYY format first (e.g., "01-10-2025")
+      const ddmmyyyyMatch = dateOnly.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+      if (ddmmyyyyMatch) {
+        const [_, day, month, year] = ddmmyyyyMatch;
+        return `${year}-${month}-${day}`;
+      }
+      
+      // Fall back to standard date parsing (e.g., "22-Oct-2025")
       const date = new Date(dateOnly);
       if (!isNaN(date.getTime())) {
         return date.toISOString().split('T')[0];
@@ -452,8 +460,14 @@ const LeaveAttendance = () => {
             continue;
           }
 
-          const inTime = parseTime(row['In Time']);
-          const outTime = parseTime(row['Out Time']);
+          const inTime = parseTime(normalizedRow['intime']);
+          const outTime = parseTime(normalizedRow['outtime']);
+          
+          // Read duration from Excel (e.g., "05:54")
+          const excelDuration = normalizedRow['duration'];
+          const duration = excelDuration && typeof excelDuration === 'string' && excelDuration !== '00:00'
+            ? `${excelDuration}:00`
+            : null;
           
           const biometricRecord = {
             employee_id: employee.id,
@@ -461,7 +475,7 @@ const LeaveAttendance = () => {
             attendance_date: parseDate(normalizedRow['date'] || row['Date']),
             in_time: inTime,
             out_time: outTime,
-            duration: calculateDuration(inTime, outTime),
+            duration: duration,
             status: status || 'Present'
           };
 
