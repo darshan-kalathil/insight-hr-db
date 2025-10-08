@@ -235,7 +235,7 @@ export const UnapprovedAbsences = () => {
                     <TableHead>Date</TableHead>
                     <TableHead>Day</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Note</TableHead>
+                    <TableHead>Leave/Regularization</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -246,8 +246,18 @@ export const UnapprovedAbsences = () => {
                       <TableCell>
                         <Badge variant="destructive">{detail.biometric_status}</Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        Needs leave or regularization entry
+                      <TableCell>
+                        {detail.leave_type ? (
+                          <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                            Leave: {detail.leave_type}
+                          </Badge>
+                        ) : detail.regularization_reason ? (
+                          <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-400">
+                            Reg: {detail.regularization_reason}
+                          </Badge>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Needs leave or regularization entry</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
