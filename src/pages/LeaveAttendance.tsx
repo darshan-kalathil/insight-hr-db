@@ -488,11 +488,20 @@ const LeaveAttendance = () => {
           const inTime = parseTime(normalizedRow['intime']);
           const outTime = parseTime(normalizedRow['outtime']);
           
-          // Read duration from Excel (e.g., "05:54")
+          // Read duration from Excel (format: "05:54:00" or "5:54:00")
           const excelDuration = normalizedRow['duration'];
-          const duration = excelDuration && typeof excelDuration === 'string' && excelDuration !== '00:00'
-            ? `${excelDuration}:00`
-            : null;
+          let duration = null;
+          if (excelDuration && typeof excelDuration === 'string') {
+            const trimmed = excelDuration.trim();
+            // Check if already has seconds (hh:mm:ss)
+            if (trimmed.match(/^\d{1,2}:\d{2}:\d{2}$/)) {
+              duration = trimmed !== '00:00:00' ? trimmed : null;
+            } 
+            // If only hh:mm format, add seconds
+            else if (trimmed.match(/^\d{1,2}:\d{2}$/)) {
+              duration = trimmed !== '00:00' ? `${trimmed}:00` : null;
+            }
+          }
           
           const biometricRecord = {
             employee_id: employee.id,
