@@ -71,7 +71,21 @@ const LeaveAttendance = () => {
     if (typeof timeValue === 'string') {
       const trimmed = timeValue.trim();
       
-      // Handle "08:35 AM" or "08:35 PM" format
+      // Handle "6:10:00 PM" or "08:35:00 AM" format (with seconds)
+      const ampmWithSecondsMatch = trimmed.match(/(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)/i);
+      if (ampmWithSecondsMatch) {
+        let hours = parseInt(ampmWithSecondsMatch[1]);
+        const minutes = ampmWithSecondsMatch[2];
+        const seconds = ampmWithSecondsMatch[3];
+        const period = ampmWithSecondsMatch[4].toUpperCase();
+        
+        if (period === 'PM' && hours !== 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+        
+        return `${String(hours).padStart(2, '0')}:${minutes}:${seconds}`;
+      }
+      
+      // Handle "08:35 AM" or "08:35 PM" format (without seconds)
       const ampmMatch = trimmed.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
       if (ampmMatch) {
         let hours = parseInt(ampmMatch[1]);
