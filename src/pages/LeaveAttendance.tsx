@@ -400,8 +400,6 @@ const LeaveAttendance = () => {
         allEmployees?.map(emp => [emp.empl_no, { id: emp.id, location: emp.location }]) || []
       );
 
-      let nonDelhiSkipped = 0;
-
       for (const row of jsonData as any[]) {
         try {
           // Normalize column names by creating a case-insensitive lookup
@@ -451,13 +449,6 @@ const LeaveAttendance = () => {
           if (!employee) {
             results.errors++;
             results.errorDetails.push(`Employee ${employeeCode} not found in database`);
-            continue;
-          }
-
-          // Skip non-Delhi employees
-          if (employee.location !== 'Delhi') {
-            nonDelhiSkipped++;
-            results.skipped++;
             continue;
           }
 
@@ -525,7 +516,7 @@ const LeaveAttendance = () => {
       setBiometricResult(results);
       toast({
         title: 'Biometric Data Imported',
-        description: `Valid: ${results.valid}, Skipped: ${results.skipped} (${nonDelhiSkipped} non-Delhi employees), Errors: ${results.errors}`
+        description: `Valid: ${results.valid}, Skipped: ${results.skipped}, Errors: ${results.errors}`
       });
     } catch (error: any) {
       toast({
