@@ -16,7 +16,6 @@ import { calculateReconciliation } from '@/lib/reconciliationService';
 import { startOfYear, endOfYear, subMonths } from 'date-fns';
 import { useQueryClient } from '@tanstack/react-query';
 import { calculateDuration } from '@/lib/utils';
-
 type ParseResult = {
   total: number;
   valid: number;
@@ -25,7 +24,6 @@ type ParseResult = {
   errorDetails: string[];
   data: any[];
 };
-
 const LeaveAttendance = () => {
   const [leaveResult, setLeaveResult] = useState<ParseResult | null>(null);
   const [attendanceResult, setAttendanceResult] = useState<ParseResult | null>(null);
@@ -33,9 +31,10 @@ const LeaveAttendance = () => {
   const [parsingLeave, setParsingLeave] = useState(false);
   const [parsingAttendance, setParsingAttendance] = useState(false);
   const [parsingBiometric, setParsingBiometric] = useState(false);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const queryClient = useQueryClient();
-
   const parseDate = (dateValue: any): string | null => {
     if (!dateValue) return null;
 
@@ -48,14 +47,14 @@ const LeaveAttendance = () => {
     // Handle string dates
     if (typeof dateValue === 'string') {
       const dateOnly = dateValue.split(' ')[0].trim();
-      
+
       // Try DD-MM-YYYY format first (e.g., "01-10-2025")
       const ddmmyyyyMatch = dateOnly.match(/^(\d{2})-(\d{2})-(\d{4})$/);
       if (ddmmyyyyMatch) {
         const [_, day, month, year] = ddmmyyyyMatch;
         return `${year}-${month}-${day}`;
       }
-      
+
       // Fall back to standard date parsing (e.g., "22-Oct-2025")
       const date = new Date(dateOnly);
       if (!isNaN(date.getTime())) {
@@ -64,24 +63,21 @@ const LeaveAttendance = () => {
     }
     return null;
   };
-
   const parseTime = (timeValue: any): string | null => {
     if (!timeValue) return null;
-    
+
     // Handle Excel serial number format (0.0 to 1.0 represents 00:00:00 to 23:59:59)
     if (typeof timeValue === 'number') {
       // Excel stores times as fractions of a day (e.g., 0.5 = 12:00:00 PM)
       const totalSeconds = Math.round(timeValue * 86400); // 86400 = 24*60*60
       const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const minutes = Math.floor(totalSeconds % 3600 / 60);
       const seconds = totalSeconds % 60;
-      
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
-    
     if (typeof timeValue === 'string') {
       const trimmed = timeValue.trim();
-      
+
       // Handle "6:10:00 PM" or "08:35:00 AM" format (with seconds)
       const ampmWithSecondsMatch = trimmed.match(/(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)/i);
       if (ampmWithSecondsMatch) {
@@ -89,26 +85,22 @@ const LeaveAttendance = () => {
         const minutes = ampmWithSecondsMatch[2];
         const seconds = ampmWithSecondsMatch[3];
         const period = ampmWithSecondsMatch[4].toUpperCase();
-        
         if (period === 'PM' && hours !== 12) hours += 12;
         if (period === 'AM' && hours === 12) hours = 0;
-        
         return `${String(hours).padStart(2, '0')}:${minutes}:${seconds}`;
       }
-      
+
       // Handle "08:35 AM" or "08:35 PM" format (without seconds)
       const ampmMatch = trimmed.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
       if (ampmMatch) {
         let hours = parseInt(ampmMatch[1]);
         const minutes = ampmMatch[2];
         const period = ampmMatch[3].toUpperCase();
-        
         if (period === 'PM' && hours !== 12) hours += 12;
         if (period === 'AM' && hours === 12) hours = 0;
-        
         return `${String(hours).padStart(2, '0')}:${minutes}:00`;
       }
-      
+
       // Handle 24-hour format "08:35" or "17:45"
       const time24Match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
       if (time24Match) {
@@ -117,23 +109,18 @@ const LeaveAttendance = () => {
         return `${hours}:${minutes}:00`;
       }
     }
-    
     return null;
   };
-
   const handleLeaveUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     setParsingLeave(true);
     setLeaveResult(null);
-
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
       const results: ParseResult = {
         total: jsonData.length,
         valid: 0,
@@ -148,11 +135,10 @@ const LeaveAttendance = () => {
         const sampleRow = jsonData[0] as any;
         console.log('Available columns in Leave file:', Object.keys(sampleRow));
       }
-
       for (const row of jsonData as any[]) {
         try {
           const approvalStatus = row['Approval Status']?.toString().trim();
-          
+
           // Skip cancelled leaves
           if (approvalStatus === 'Cancelled') {
             results.skipped++;
@@ -161,7 +147,6 @@ const LeaveAttendance = () => {
 
           // Try multiple possible column names for Employee ID
           const employeeIdRaw = row['Employee ID'] || row['Employee Id'] || row['employee_id'] || row['EmployeeID'];
-          
           if (!employeeIdRaw) {
             results.errors++;
             results.errorDetails.push(`Missing Employee ID field. Available fields: ${Object.keys(row).join(', ')}`);
@@ -171,13 +156,11 @@ const LeaveAttendance = () => {
           // Extract employee number from "Name ONDC-E-XXX" format or direct "ONDC-E-XXX" format
           const employeeIdStr = employeeIdRaw.toString();
           const employeeMatch = employeeIdStr.match(/ONDC-E-\d+/);
-          
           if (!employeeMatch) {
             results.errors++;
             results.errorDetails.push(`Could not extract employee number from: ${employeeIdStr}`);
             continue;
           }
-
           const leaveRecord = {
             employee_number: employeeMatch[0],
             leave_type: row['Leave type'],
@@ -192,7 +175,6 @@ const LeaveAttendance = () => {
             session_details: row['Session Details'] || null,
             added_by: row['Added By']?.toString() || null
           };
-
           results.data.push(leaveRecord);
           results.valid++;
         } catch (error: any) {
@@ -205,12 +187,10 @@ const LeaveAttendance = () => {
       if (results.data.length > 0) {
         for (const record of results.data) {
           // Get employee UUID from employee number
-          const { data: employee, error: employeeError } = await supabase
-            .from('employees')
-            .select('id')
-            .eq('empl_no', record.employee_number)
-            .maybeSingle();
-
+          const {
+            data: employee,
+            error: employeeError
+          } = await supabase.from('employees').select('id').eq('empl_no', record.employee_number).maybeSingle();
           if (employeeError || !employee) {
             results.errors++;
             results.errorDetails.push(`Employee ${record.employee_number} not found in database`);
@@ -218,33 +198,30 @@ const LeaveAttendance = () => {
           }
 
           // Upsert leave record
-          const { error: upsertError } = await supabase
-            .from('leave_records')
-            .upsert({
-              employee_id: employee.id,
-              from_date: record.from_date,
-              to_date: record.to_date,
-              leave_type: record.leave_type,
-              number_of_days: record.days_taken,
-              reason: record.reason,
-              approval_status: record.approval_status
-            }, {
-              onConflict: 'employee_id,from_date,to_date,leave_type'
-            });
-
+          const {
+            error: upsertError
+          } = await supabase.from('leave_records').upsert({
+            employee_id: employee.id,
+            from_date: record.from_date,
+            to_date: record.to_date,
+            leave_type: record.leave_type,
+            number_of_days: record.days_taken,
+            reason: record.reason,
+            approval_status: record.approval_status
+          }, {
+            onConflict: 'employee_id,from_date,to_date,leave_type'
+          });
           if (upsertError) {
             results.errors++;
             results.errorDetails.push(`Failed to save record for ${record.employee_number}: ${upsertError.message}`);
           }
         }
-
         await logActivity({
           actionType: 'create',
           entityType: 'employee',
           description: `Imported ${results.valid} leave records`
         });
       }
-
       setLeaveResult(results);
       toast({
         title: 'Leave Data Imported',
@@ -261,21 +238,19 @@ const LeaveAttendance = () => {
       event.target.value = '';
     }
   };
-
   const handleAttendanceUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     setParsingAttendance(true);
     setAttendanceResult(null);
-
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       // Skip first 2 rows, headers are on row 3 (range starts from 2)
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { range: 2 });
-
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        range: 2
+      });
       const results: ParseResult = {
         total: jsonData.length,
         valid: 0,
@@ -290,11 +265,10 @@ const LeaveAttendance = () => {
         const sampleRow = jsonData[0] as any;
         console.log('Available columns in Attendance file:', Object.keys(sampleRow));
       }
-
       for (const row of jsonData as any[]) {
         try {
           const approvalStatus = row['Approval Status']?.toString().trim();
-          
+
           // Skip cancelled regularizations
           if (approvalStatus === 'Cancelled') {
             results.skipped++;
@@ -303,24 +277,19 @@ const LeaveAttendance = () => {
 
           // Try multiple possible column names for Employee ID
           const employeeIdRaw = row['Employee ID'] || row['Employee Id'] || row['employee_id'] || row['EmployeeID'];
-          
           if (!employeeIdRaw) {
             results.errors++;
             results.errorDetails.push(`Missing Employee ID field. Available fields: ${Object.keys(row).join(', ')}`);
             continue;
           }
-
           const employeeIdStr = employeeIdRaw.toString().trim();
           const employeeMatch = employeeIdStr.match(/ONDC-E-\d+/);
-          
           if (!employeeMatch) {
             results.errors++;
             results.errorDetails.push(`Could not extract employee number from: ${employeeIdStr}`);
             continue;
           }
-          
           const employeeNumber = employeeMatch[0];
-
           const attendanceRecord = {
             employee_number: employeeNumber,
             attendance_date: parseDate(row['Attendance Day']),
@@ -338,7 +307,6 @@ const LeaveAttendance = () => {
             approver_name: row['Approver']?.toString() || null,
             approval_time: row['Approval Time'] ? parseDate(row['Approval Time']) : null
           };
-
           results.data.push(attendanceRecord);
           results.valid++;
         } catch (error: any) {
@@ -351,12 +319,10 @@ const LeaveAttendance = () => {
       if (results.data.length > 0) {
         for (const record of results.data) {
           // Get employee UUID from employee number
-          const { data: employee, error: employeeError } = await supabase
-            .from('employees')
-            .select('id')
-            .eq('empl_no', record.employee_number)
-            .maybeSingle();
-
+          const {
+            data: employee,
+            error: employeeError
+          } = await supabase.from('employees').select('id').eq('empl_no', record.employee_number).maybeSingle();
           if (employeeError || !employee) {
             results.errors++;
             results.errorDetails.push(`Employee ${record.employee_number} not found in database`);
@@ -364,25 +330,23 @@ const LeaveAttendance = () => {
           }
 
           // Upsert attendance record
-          const { error: upsertError } = await supabase
-            .from('attendance_regularization')
-            .upsert({
-              employee_id: employee.id,
-              attendance_date: record.attendance_date,
-              in_time: record.new_check_in,
-              out_time: record.new_check_out,
-              reason: record.reason,
-              approval_status: record.approval_status
-            }, {
-              onConflict: 'employee_id,attendance_date,reason'
-            });
-
+          const {
+            error: upsertError
+          } = await supabase.from('attendance_regularization').upsert({
+            employee_id: employee.id,
+            attendance_date: record.attendance_date,
+            in_time: record.new_check_in,
+            out_time: record.new_check_out,
+            reason: record.reason,
+            approval_status: record.approval_status
+          }, {
+            onConflict: 'employee_id,attendance_date,reason'
+          });
           if (upsertError) {
             results.errors++;
             results.errorDetails.push(`Failed to save record for ${record.employee_number}: ${upsertError.message}`);
           }
         }
-
         await logActivity({
           actionType: 'create',
           entityType: 'employee',
@@ -390,7 +354,6 @@ const LeaveAttendance = () => {
           description: `Imported ${results.valid} attendance records`
         });
       }
-
       setAttendanceResult(results);
       toast({
         title: 'Attendance Data Imported',
@@ -407,20 +370,16 @@ const LeaveAttendance = () => {
       event.target.value = '';
     }
   };
-
   const handleBiometricUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     setParsingBiometric(true);
     setBiometricResult(null);
-
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
       const results: ParseResult = {
         total: jsonData.length,
         valid: 0,
@@ -431,19 +390,19 @@ const LeaveAttendance = () => {
       };
 
       // Batch-load all employees for fast in-memory lookups
-      const { data: allEmployees, error: employeesError } = await supabase
-        .from('employees')
-        .select('id, empl_no, location');
-
+      const {
+        data: allEmployees,
+        error: employeesError
+      } = await supabase.from('employees').select('id, empl_no, location');
       if (employeesError) {
         throw new Error(`Failed to load employees: ${employeesError.message}`);
       }
 
       // Create a Map for O(1) lookups by employee code
-      const employeeMap = new Map(
-        allEmployees?.map(emp => [emp.empl_no, { id: emp.id, location: emp.location }]) || []
-      );
-
+      const employeeMap = new Map(allEmployees?.map(emp => [emp.empl_no, {
+        id: emp.id,
+        location: emp.location
+      }]) || []);
       for (const row of jsonData as any[]) {
         try {
           // Normalize column names by creating a case-insensitive lookup
@@ -451,9 +410,8 @@ const LeaveAttendance = () => {
           for (const [key, value] of Object.entries(row)) {
             normalizedRow[key.toLowerCase().trim().replace(/\s+/g, '')] = value;
           }
-
           const status = (normalizedRow['status'] || normalizedRow['attendance'])?.toString().trim();
-          
+
           // Skip Weekly Off and Holiday rows
           if (status === 'Weekly Off' || status === 'Holiday') {
             results.skipped++;
@@ -461,16 +419,7 @@ const LeaveAttendance = () => {
           }
 
           // Try multiple possible column names for employee code (normalized)
-          const employeeCodeRaw = (
-            normalizedRow['employeecode'] || 
-            normalizedRow['empcode'] || 
-            normalizedRow['emp.code'] || 
-            normalizedRow['employeeid'] || 
-            normalizedRow['emplno'] ||
-            normalizedRow['employee_code'] ||
-            normalizedRow['emp_code']
-          )?.toString().trim();
-          
+          const employeeCodeRaw = (normalizedRow['employeecode'] || normalizedRow['empcode'] || normalizedRow['emp.code'] || normalizedRow['employeeid'] || normalizedRow['emplno'] || normalizedRow['employee_code'] || normalizedRow['emp_code'])?.toString().trim();
           if (!employeeCodeRaw) {
             results.errors++;
             const availableColumns = Object.keys(row).join(', ');
@@ -484,33 +433,28 @@ const LeaveAttendance = () => {
             results.skipped++;
             continue; // Skip non-ONDCE format codes
           }
-
           const employeeCode = `ONDC-E-${match[1]}`;
 
           // Look up employee from in-memory map
           const employee = employeeMap.get(employeeCode);
-
           if (!employee) {
             results.errors++;
             results.errorDetails.push(`Employee ${employeeCode} not found in database`);
             continue;
           }
-
           const inTime = parseTime(normalizedRow['intime']);
           const outTime = parseTime(normalizedRow['outtime']);
-          
+
           // Read duration from Excel (format: "05:54:00" or "5:54:00")
           const excelDuration = normalizedRow['duration'];
           let duration = null;
-          
           if (excelDuration) {
             // Handle numeric duration (Excel serial number)
             if (typeof excelDuration === 'number') {
               const totalSeconds = Math.round(excelDuration * 86400);
               const hours = Math.floor(totalSeconds / 3600);
-              const minutes = Math.floor((totalSeconds % 3600) / 60);
+              const minutes = Math.floor(totalSeconds % 3600 / 60);
               const seconds = totalSeconds % 60;
-              
               if (totalSeconds > 0) {
                 duration = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
               }
@@ -521,14 +465,13 @@ const LeaveAttendance = () => {
               // Check if already has seconds (hh:mm:ss)
               if (trimmed.match(/^\d{1,2}:\d{2}:\d{2}$/)) {
                 duration = trimmed !== '00:00:00' ? trimmed : null;
-              } 
+              }
               // If only hh:mm format, add seconds
               else if (trimmed.match(/^\d{1,2}:\d{2}$/)) {
                 duration = trimmed !== '00:00' ? `${trimmed}:00` : null;
               }
             }
           }
-          
           const biometricRecord = {
             employee_id: employee.id,
             employee_code: employeeCode,
@@ -538,7 +481,6 @@ const LeaveAttendance = () => {
             duration: duration,
             status: status || 'Present'
           };
-
           results.data.push(biometricRecord);
           results.valid++;
         } catch (error: any) {
@@ -550,12 +492,11 @@ const LeaveAttendance = () => {
       // Insert data into database
       if (results.data.length > 0) {
         for (const record of results.data) {
-          const { error: upsertError } = await supabase
-            .from('biometric_attendance')
-            .upsert(record, {
-              onConflict: 'employee_id,attendance_date'
-            });
-
+          const {
+            error: upsertError
+          } = await supabase.from('biometric_attendance').upsert(record, {
+            onConflict: 'employee_id,attendance_date'
+          });
           if (upsertError) {
             results.errors++;
             results.errorDetails.push(`Failed to save biometric record: ${upsertError.message}`);
@@ -563,30 +504,29 @@ const LeaveAttendance = () => {
         }
 
         // Trigger reconciliation calculation
-        const dateRange = results.data.reduce(
-          (acc, record) => {
-            const date = new Date(record.attendance_date);
-            return {
-              min: !acc.min || date < acc.min ? date : acc.min,
-              max: !acc.max || date > acc.max ? date : acc.max
-            };
-          },
-          { min: null as Date | null, max: null as Date | null }
-        );
-
+        const dateRange = results.data.reduce((acc, record) => {
+          const date = new Date(record.attendance_date);
+          return {
+            min: !acc.min || date < acc.min ? date : acc.min,
+            max: !acc.max || date > acc.max ? date : acc.max
+          };
+        }, {
+          min: null as Date | null,
+          max: null as Date | null
+        });
         if (dateRange.min && dateRange.max) {
           await calculateReconciliation(dateRange.min, dateRange.max);
           // Invalidate unapproved absences queries to refresh the UI
-          queryClient.invalidateQueries({ queryKey: ['unapproved-absences'] });
+          queryClient.invalidateQueries({
+            queryKey: ['unapproved-absences']
+          });
         }
-
         await logActivity({
           actionType: 'create',
           entityType: 'employee',
           description: `Imported ${results.valid} biometric attendance records`
         });
       }
-
       setBiometricResult(results);
       toast({
         title: 'Biometric Data Imported',
@@ -603,9 +543,7 @@ const LeaveAttendance = () => {
       event.target.value = '';
     }
   };
-
-  return (
-    <DashboardLayout>
+  return <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Leave & Attendance Analysis</h1>
@@ -616,7 +554,7 @@ const LeaveAttendance = () => {
 
         <Tabs defaultValue="uploads" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="uploads">Uploads</TabsTrigger>
+            <TabsTrigger value="uploads">Employee Details</TabsTrigger>
             <TabsTrigger value="leave-analytics">Leave Analytics</TabsTrigger>
             <TabsTrigger value="regularization-analytics">Regularization Analytics</TabsTrigger>
             <TabsTrigger value="unapproved-absences">Unapproved Absences</TabsTrigger>
@@ -638,14 +576,7 @@ const LeaveAttendance = () => {
                 </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleLeaveUpload}
-                    disabled={parsingLeave}
-                    className="hidden"
-                    id="leave-upload"
-                  />
+                  <input type="file" accept=".xlsx,.xls" onChange={handleLeaveUpload} disabled={parsingLeave} className="hidden" id="leave-upload" />
                   <label htmlFor="leave-upload">
                     <Button asChild disabled={parsingLeave}>
                       <span className="cursor-pointer">
@@ -656,8 +587,7 @@ const LeaveAttendance = () => {
                   </label>
                 </div>
 
-                {leaveResult && (
-                  <div className="space-y-3 mt-4">
+                {leaveResult && <div className="space-y-3 mt-4">
                     <div className="flex items-center gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-green-600" />
                       <span className="font-medium">{leaveResult.valid} valid records parsed</span>
@@ -666,31 +596,22 @@ const LeaveAttendance = () => {
                       <AlertCircle className="h-4 w-4 text-yellow-600" />
                       <span className="font-medium">{leaveResult.skipped} cancelled records skipped</span>
                     </div>
-                    {leaveResult.errors > 0 && (
-                      <>
+                    {leaveResult.errors > 0 && <>
                         <div className="flex items-center gap-2 text-sm">
                           <XCircle className="h-4 w-4 text-red-600" />
                           <span className="font-medium">{leaveResult.errors} errors</span>
                         </div>
-                        {leaveResult.errorDetails.length > 0 && (
-                          <div className="mt-2 p-3 bg-destructive/10 rounded-md">
+                        {leaveResult.errorDetails.length > 0 && <div className="mt-2 p-3 bg-destructive/10 rounded-md">
                             <p className="text-sm font-medium mb-2">Error Details:</p>
                             <ul className="text-xs space-y-1">
-                              {leaveResult.errorDetails.slice(0, 5).map((error, index) => (
-                                <li key={index} className="text-muted-foreground">{error}</li>
-                              ))}
-                              {leaveResult.errorDetails.length > 5 && (
-                                <li className="text-muted-foreground">
+                              {leaveResult.errorDetails.slice(0, 5).map((error, index) => <li key={index} className="text-muted-foreground">{error}</li>)}
+                              {leaveResult.errorDetails.length > 5 && <li className="text-muted-foreground">
                                   ... and {leaveResult.errorDetails.length - 5} more errors
-                                </li>
-                              )}
+                                </li>}
                             </ul>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
+                          </div>}
+                      </>}
+                  </div>}
               </CardContent>
               </Card>
 
@@ -704,14 +625,7 @@ const LeaveAttendance = () => {
                 </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleAttendanceUpload}
-                    disabled={parsingAttendance}
-                    className="hidden"
-                    id="attendance-upload"
-                  />
+                  <input type="file" accept=".xlsx,.xls" onChange={handleAttendanceUpload} disabled={parsingAttendance} className="hidden" id="attendance-upload" />
                   <label htmlFor="attendance-upload">
                     <Button asChild disabled={parsingAttendance}>
                       <span className="cursor-pointer">
@@ -722,8 +636,7 @@ const LeaveAttendance = () => {
                   </label>
                 </div>
 
-                {attendanceResult && (
-                  <div className="space-y-3 mt-4">
+                {attendanceResult && <div className="space-y-3 mt-4">
                     <div className="flex items-center gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-green-600" />
                       <span className="font-medium">{attendanceResult.valid} valid records parsed</span>
@@ -732,31 +645,22 @@ const LeaveAttendance = () => {
                       <AlertCircle className="h-4 w-4 text-yellow-600" />
                       <span className="font-medium">{attendanceResult.skipped} cancelled records skipped</span>
                     </div>
-                    {attendanceResult.errors > 0 && (
-                      <>
+                    {attendanceResult.errors > 0 && <>
                         <div className="flex items-center gap-2 text-sm">
                           <XCircle className="h-4 w-4 text-red-600" />
                           <span className="font-medium">{attendanceResult.errors} errors</span>
                         </div>
-                        {attendanceResult.errorDetails.length > 0 && (
-                          <div className="mt-2 p-3 bg-destructive/10 rounded-md">
+                        {attendanceResult.errorDetails.length > 0 && <div className="mt-2 p-3 bg-destructive/10 rounded-md">
                             <p className="text-sm font-medium mb-2">Error Details:</p>
                             <ul className="text-xs space-y-1">
-                              {attendanceResult.errorDetails.slice(0, 5).map((error, index) => (
-                                <li key={index} className="text-muted-foreground">{error}</li>
-                              ))}
-                              {attendanceResult.errorDetails.length > 5 && (
-                                <li className="text-muted-foreground">
+                              {attendanceResult.errorDetails.slice(0, 5).map((error, index) => <li key={index} className="text-muted-foreground">{error}</li>)}
+                              {attendanceResult.errorDetails.length > 5 && <li className="text-muted-foreground">
                                   ... and {attendanceResult.errorDetails.length - 5} more errors
-                                </li>
-                              )}
+                                </li>}
                             </ul>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
+                          </div>}
+                      </>}
+                  </div>}
               </CardContent>
               </Card>
 
@@ -770,14 +674,7 @@ const LeaveAttendance = () => {
                 </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleBiometricUpload}
-                    disabled={parsingBiometric}
-                    className="hidden"
-                    id="biometric-upload"
-                  />
+                  <input type="file" accept=".xlsx,.xls" onChange={handleBiometricUpload} disabled={parsingBiometric} className="hidden" id="biometric-upload" />
                   <label htmlFor="biometric-upload">
                     <Button asChild disabled={parsingBiometric}>
                       <span className="cursor-pointer">
@@ -788,8 +685,7 @@ const LeaveAttendance = () => {
                   </label>
                 </div>
 
-                {biometricResult && (
-                  <div className="space-y-3 mt-4">
+                {biometricResult && <div className="space-y-3 mt-4">
                     <div className="flex items-center gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-green-600" />
                       <span className="font-medium">{biometricResult.valid} valid records parsed (Delhi employees)</span>
@@ -798,31 +694,22 @@ const LeaveAttendance = () => {
                       <AlertCircle className="h-4 w-4 text-yellow-600" />
                       <span className="font-medium">{biometricResult.skipped} records skipped (weekly offs, holidays, non-Delhi)</span>
                     </div>
-                    {biometricResult.errors > 0 && (
-                      <>
+                    {biometricResult.errors > 0 && <>
                         <div className="flex items-center gap-2 text-sm">
                           <XCircle className="h-4 w-4 text-red-600" />
                           <span className="font-medium">{biometricResult.errors} errors</span>
                         </div>
-                        {biometricResult.errorDetails.length > 0 && (
-                          <div className="mt-2 p-3 bg-destructive/10 rounded-md">
+                        {biometricResult.errorDetails.length > 0 && <div className="mt-2 p-3 bg-destructive/10 rounded-md">
                             <p className="text-sm font-medium mb-2">Error Details:</p>
                             <ul className="text-xs space-y-1">
-                              {biometricResult.errorDetails.slice(0, 5).map((error, index) => (
-                                <li key={index} className="text-muted-foreground">{error}</li>
-                              ))}
-                              {biometricResult.errorDetails.length > 5 && (
-                                <li className="text-muted-foreground">
+                              {biometricResult.errorDetails.slice(0, 5).map((error, index) => <li key={index} className="text-muted-foreground">{error}</li>)}
+                              {biometricResult.errorDetails.length > 5 && <li className="text-muted-foreground">
                                   ... and {biometricResult.errorDetails.length - 5} more errors
-                                </li>
-                              )}
+                                </li>}
                             </ul>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
+                          </div>}
+                      </>}
+                  </div>}
               </CardContent>
               </Card>
             </div>
@@ -841,8 +728,6 @@ const LeaveAttendance = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
-  );
+    </DashboardLayout>;
 };
-
 export default LeaveAttendance;
