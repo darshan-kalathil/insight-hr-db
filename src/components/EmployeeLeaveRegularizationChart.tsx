@@ -8,6 +8,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useEmployeeLeaveRegularization, useEmployees } from '@/hooks/useEmployeeLeaveRegularization';
+import { useEmployeeDetailsTable } from '@/hooks/useEmployeeDetailsTable';
+import { EmployeeLeaveDetailsTable } from '@/components/EmployeeLeaveDetailsTable';
+import { EmployeeRegularizationDetailsTable } from '@/components/EmployeeRegularizationDetailsTable';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { cn, getCurrentFinancialYear } from '@/lib/utils';
 
@@ -22,6 +25,14 @@ export const EmployeeLeaveRegularizationChart = () => {
 
   const { data: employees, isLoading: loadingEmployees } = useEmployees();
   const { data: analytics, isLoading: loadingAnalytics } = useEmployeeLeaveRegularization(
+    selectedEmployeeId,
+    startDate,
+    endDate,
+    selectedLeaveType || undefined,
+    selectedRegType || undefined
+  );
+
+  const { data: detailsData, isLoading: loadingDetails } = useEmployeeDetailsTable(
     selectedEmployeeId,
     startDate,
     endDate,
@@ -283,6 +294,20 @@ export const EmployeeLeaveRegularizationChart = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Detail Tables */}
+      {selectedEmployeeId && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <EmployeeLeaveDetailsTable 
+            records={detailsData?.leaveRecords || []} 
+            isLoading={loadingDetails} 
+          />
+          <EmployeeRegularizationDetailsTable 
+            records={detailsData?.regularizationRecords || []} 
+            isLoading={loadingDetails} 
+          />
+        </div>
+      )}
     </div>
   );
 };
