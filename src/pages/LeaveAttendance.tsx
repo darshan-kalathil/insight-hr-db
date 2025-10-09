@@ -68,6 +68,17 @@ const LeaveAttendance = () => {
   const parseTime = (timeValue: any): string | null => {
     if (!timeValue) return null;
     
+    // Handle Excel serial number format (0.0 to 1.0 represents 00:00:00 to 23:59:59)
+    if (typeof timeValue === 'number') {
+      // Excel stores times as fractions of a day (e.g., 0.5 = 12:00:00 PM)
+      const totalSeconds = Math.round(timeValue * 86400); // 86400 = 24*60*60
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    
     if (typeof timeValue === 'string') {
       const trimmed = timeValue.trim();
       
@@ -491,15 +502,30 @@ const LeaveAttendance = () => {
           // Read duration from Excel (format: "05:54:00" or "5:54:00")
           const excelDuration = normalizedRow['duration'];
           let duration = null;
-          if (excelDuration && typeof excelDuration === 'string') {
-            const trimmed = excelDuration.trim();
-            // Check if already has seconds (hh:mm:ss)
-            if (trimmed.match(/^\d{1,2}:\d{2}:\d{2}$/)) {
-              duration = trimmed !== '00:00:00' ? trimmed : null;
-            } 
-            // If only hh:mm format, add seconds
-            else if (trimmed.match(/^\d{1,2}:\d{2}$/)) {
-              duration = trimmed !== '00:00' ? `${trimmed}:00` : null;
+          
+          if (excelDuration) {
+            // Handle numeric duration (Excel serial number)
+            if (typeof excelDuration === 'number') {
+              const totalSeconds = Math.round(excelDuration * 86400);
+              const hours = Math.floor(totalSeconds / 3600);
+              const minutes = Math.floor((totalSeconds % 3600) / 60);
+              const seconds = totalSeconds % 60;
+              
+              if (totalSeconds > 0) {
+                duration = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+              }
+            }
+            // Handle string duration
+            else if (typeof excelDuration === 'string') {
+              const trimmed = excelDuration.trim();
+              // Check if already has seconds (hh:mm:ss)
+              if (trimmed.match(/^\d{1,2}:\d{2}:\d{2}$/)) {
+                duration = trimmed !== '00:00:00' ? trimmed : null;
+              } 
+              // If only hh:mm format, add seconds
+              else if (trimmed.match(/^\d{1,2}:\d{2}$/)) {
+                duration = trimmed !== '00:00' ? `${trimmed}:00` : null;
+              }
             }
           }
           
