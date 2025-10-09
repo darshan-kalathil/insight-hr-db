@@ -75,9 +75,6 @@ export const EmployeeRegularizationDetailsTable = ({ records, isLoading }: Emplo
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Reason</TableHead>
-                <TableHead>In Time</TableHead>
-                <TableHead>Out Time</TableHead>
-                <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -89,13 +86,6 @@ export const EmployeeRegularizationDetailsTable = ({ records, isLoading }: Emplo
                   <TableCell>
                     <Badge variant={getRegTypeBadgeVariant(record.reason)}>
                       {record.reason}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{record.in_time || '-'}</TableCell>
-                  <TableCell>{record.out_time || '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(record.approval_status)}>
-                      {record.approval_status}
                     </Badge>
                   </TableCell>
                 </TableRow>

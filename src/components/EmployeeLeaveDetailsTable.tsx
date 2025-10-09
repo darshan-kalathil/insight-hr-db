@@ -75,8 +75,6 @@ export const EmployeeLeaveDetailsTable = ({ records, isLoading }: EmployeeLeaveD
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Leave Type</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -88,14 +86,6 @@ export const EmployeeLeaveDetailsTable = ({ records, isLoading }: EmployeeLeaveD
                   <TableCell>
                     <Badge variant={getLeaveTypeBadgeVariant(record.leaveType)}>
                       {record.leaveType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="max-w-[300px] truncate">
-                    {record.reason || '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(record.approvalStatus)}>
-                      {record.approvalStatus}
                     </Badge>
                   </TableCell>
                 </TableRow>
