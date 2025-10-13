@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CalendarIcon, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { LevelWiseHeadcount } from '@/components/LevelWiseHeadcount';
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
 // Get current financial year (April 1 to March 31)
@@ -32,6 +33,7 @@ const Analytics = () => {
   const [levelData, setLevelData] = useState<any[]>([]);
   const [podData, setPodData] = useState<any[]>([]);
   const [attritionData, setAttritionData] = useState<any>({});
+  const [levelWiseHeadcount, setLevelWiseHeadcount] = useState<{[key: string]: number}>({});
   const [loading, setLoading] = useState(true);
   const [podFilter, setPodFilter] = useState<string>('all');
   const [uniquePods, setUniquePods] = useState<string[]>([]);
@@ -132,6 +134,30 @@ const Analytics = () => {
         employeesWhoLeft,
         averageHeadcount: averageHeadcount.toFixed(0)
       });
+
+      // Level-wise active headcount for the selected period
+      const levelWiseHeadcountData = employees.filter((e: any) => {
+        const joinDate = new Date(e.doj);
+        
+        // Must have joined before or during the period
+        if (joinDate > periodTo) return false;
+        
+        // Either currently active or left after the period started
+        if (e.status === 'Active' || e.status === 'Serving Notice Period') return true;
+        
+        // If inactive, check if they were active during any part of the period
+        if (e.date_of_exit) {
+          const exitDate = new Date(e.date_of_exit);
+          return exitDate >= periodFrom;
+        }
+        
+        return false;
+      }).reduce((acc: any, emp: any) => {
+        acc[emp.level] = (acc[emp.level] || 0) + 1;
+        return acc;
+      }, {});
+      
+      setLevelWiseHeadcount(levelWiseHeadcountData);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -218,6 +244,13 @@ const Analytics = () => {
             </CardHeader>
           </Card>
         </div>
+
+        {/* Level-wise Headcount Card */}
+        <LevelWiseHeadcount 
+          levelData={levelWiseHeadcount}
+          periodFrom={periodFrom}
+          periodTo={periodTo}
+        />
 
         {/* Salary Features Card */}
         <Card className="bg-primary/5 border-primary/20">
