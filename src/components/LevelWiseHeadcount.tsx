@@ -22,7 +22,7 @@ export const LevelWiseHeadcount = ({ levelData, periodFrom, periodTo }: LevelWis
       <CardHeader>
         <CardTitle>Level-wise Active Headcount</CardTitle>
         <CardDescription>
-          Employees active during {format(periodFrom, "MMM d, yyyy")} - {format(periodTo, "MMM d, yyyy")}
+          Employees active as of {format(periodTo, "MMM d, yyyy")}
         </CardDescription>
       </CardHeader>
       <CardContent>

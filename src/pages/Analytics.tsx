@@ -135,20 +135,20 @@ const Analytics = () => {
         averageHeadcount: averageHeadcount.toFixed(0)
       });
 
-      // Level-wise active headcount for the selected period
+      // Level-wise active headcount as of the "To Date"
       const levelWiseHeadcountData = employees.filter((e: any) => {
         const joinDate = new Date(e.doj);
         
-        // Must have joined before or during the period
+        // Must have joined on or before the "To Date"
         if (joinDate > periodTo) return false;
         
-        // Either currently active or left after the period started
+        // Either currently active, or if inactive, left after the "To Date"
         if (e.status === 'Active' || e.status === 'Serving Notice Period') return true;
         
-        // If inactive, check if they were active during any part of the period
+        // If inactive, check if they were still active on the "To Date"
         if (e.date_of_exit) {
           const exitDate = new Date(e.date_of_exit);
-          return exitDate >= periodFrom;
+          return exitDate > periodTo;
         }
         
         return false;
