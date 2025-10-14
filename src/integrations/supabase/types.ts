@@ -47,6 +47,53 @@ export type Database = {
         }
         Relationships: []
       }
+      approved_absences_consolidated: {
+        Row: {
+          approval_status: string
+          coverage_date: string
+          coverage_type: string
+          created_at: string
+          employee_id: string
+          id: string
+          leave_type: string | null
+          regularization_reason: string | null
+          source_record_id: string
+          updated_at: string
+        }
+        Insert: {
+          approval_status: string
+          coverage_date: string
+          coverage_type: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          leave_type?: string | null
+          regularization_reason?: string | null
+          source_record_id: string
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: string
+          coverage_date?: string
+          coverage_type?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          leave_type?: string | null
+          regularization_reason?: string | null
+          source_record_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approved_absences_consolidated_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_reconciliation: {
         Row: {
           attendance_date: string
@@ -389,6 +436,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expand_leave_to_dates: {
+        Args: {
+          p_approval_status: string
+          p_employee_id: string
+          p_from_date: string
+          p_leave_id: string
+          p_leave_type: string
+          p_to_date: string
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
