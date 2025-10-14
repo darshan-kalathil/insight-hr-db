@@ -9,7 +9,7 @@ export interface ReconciliationResult {
 }
 
 /**
- * Calculate reconciliation for biometric attendance records
+ * Calculate reconciliation for biometric attendance records using consolidated table
  * Only processes Delhi-based employees
  */
 export async function calculateReconciliation(
@@ -56,73 +56,47 @@ export async function calculateReconciliation(
   if (bioError) throw bioError;
   console.log(`✅ Found ${absenceRecords?.length || 0} absence records`);
 
-
-  // Step 3: Batch-load all leaves for Delhi employees in date range
-  console.log('📋 Step 3: Batch-loading leave records...');
-  const { data: allLeaves, error: leaveError } = await supabase
-    .from('leave_records')
-    .select('employee_id, leave_type, approval_status, from_date, to_date')
+  // Step 3: Batch-load approved absences from consolidated table
+  console.log('📋 Step 3: Batch-loading approved absences from consolidated table...');
+  const { data: approvedAbsences, error: approvedError } = await supabase
+    .from('approved_absences_consolidated')
+    .select('employee_id, coverage_date, coverage_type, leave_type, regularization_reason')
     .in('employee_id', delhiEmployeeIds)
-    .lte('from_date', endDateStr)
-    .gte('to_date', startDateStr)
-    .in('approval_status', ['Approved', 'Pending']);
+    .gte('coverage_date', startDateStr)
+    .lte('coverage_date', endDateStr);
 
-  if (leaveError) throw leaveError;
-  console.log(`✅ Loaded ${allLeaves?.length || 0} leave records`);
+  if (approvedError) throw approvedError;
+  console.log(`✅ Loaded ${approvedAbsences?.length || 0} approved absence records`);
 
-  // Step 4: Batch-load all regularizations for Delhi employees in date range
-  console.log('📋 Step 4: Batch-loading regularization records...');
-  const { data: allRegularizations, error: regError } = await supabase
-    .from('attendance_regularization')
-    .select('employee_id, attendance_date, reason')
-    .in('employee_id', delhiEmployeeIds)
-    .gte('attendance_date', startDateStr)
-    .lte('attendance_date', endDateStr);
-
-  if (regError) throw regError;
-  console.log(`✅ Loaded ${allRegularizations?.length || 0} regularization records`);
-
-  // Create Maps for O(1) lookups
-  console.log('🗺️ Step 5: Building lookup maps...');
-  // Map: employeeId -> array of leave records
-  const leaveMap = new Map<string, typeof allLeaves>();
-  allLeaves?.forEach(leave => {
-    const existing = leaveMap.get(leave.employee_id) || [];
-    leaveMap.set(leave.employee_id, [...existing, leave]);
-  });
-
-  // Map: "employeeId|date" -> regularization record
-  const regMap = new Map<string, typeof allRegularizations[0]>();
-  allRegularizations?.forEach(reg => {
-    const key = `${reg.employee_id}|${reg.attendance_date}`;
-    regMap.set(key, reg);
+  // Create Map for O(1) lookups: "employeeId|date" -> array of coverages
+  console.log('🗺️ Step 4: Building lookup map...');
+  const coverageMap = new Map<string, typeof approvedAbsences>();
+  approvedAbsences?.forEach(coverage => {
+    const key = `${coverage.employee_id}|${coverage.coverage_date}`;
+    const existing = coverageMap.get(key) || [];
+    coverageMap.set(key, [...existing, coverage]);
   });
 
   let totalProcessed = 0;
   let unapprovedCount = 0;
   const reconciliationRecords = [];
 
-  // Step 6: Process each absence record with in-memory lookups
-  console.log('⚡ Step 6: Processing absence records with in-memory lookups...');
+  // Step 5: Process each absence record with consolidated table lookup
+  console.log('⚡ Step 5: Processing absence records with consolidated table lookups...');
   for (const record of absenceRecords || []) {
     totalProcessed++;
 
-    // Check for leave coverage using in-memory map
-    const employeeLeaves = leaveMap.get(record.employee_id) || [];
-    const matchingLeave = employeeLeaves.find(leave => 
-      leave.from_date <= record.attendance_date && 
-      leave.to_date >= record.attendance_date
-    );
+    // Check for coverage using consolidated table
+    const coverageKey = `${record.employee_id}|${record.attendance_date}`;
+    const coverages = coverageMap.get(coverageKey) || [];
 
-    const hasLeave = !!matchingLeave;
-    const leaveType = matchingLeave?.leave_type || null;
+    const leaveCoverage = coverages.find(c => c.coverage_type === 'Leave');
+    const regCoverage = coverages.find(c => c.coverage_type === 'Regularization');
 
-    // Check for regularization using in-memory map
-    const regKey = `${record.employee_id}|${record.attendance_date}`;
-    const regularization = regMap.get(regKey);
-
-    const hasRegularization = !!regularization;
-    const regularizationReason = regularization?.reason || null;
+    const hasLeave = !!leaveCoverage;
+    const hasRegularization = !!regCoverage;
+    const leaveType = leaveCoverage?.leave_type || null;
+    const regularizationReason = regCoverage?.regularization_reason || null;
 
     const isUnapproved = !hasLeave && !hasRegularization;
     if (isUnapproved) {
@@ -145,8 +119,8 @@ export async function calculateReconciliation(
 
   console.log(`✅ Processed ${totalProcessed} records, found ${unapprovedCount} unapproved absences`);
   
-  // Step 7: Batch upsert all reconciliation records
-  console.log(`💾 Step 7: Batch upserting ${reconciliationRecords.length} reconciliation records...`);
+  // Step 6: Batch upsert all reconciliation records
+  console.log(`💾 Step 6: Batch upserting ${reconciliationRecords.length} reconciliation records...`);
   if (reconciliationRecords.length > 0) {
     const { error: upsertError } = await supabase
       .from('attendance_reconciliation')
