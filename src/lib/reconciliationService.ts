@@ -56,17 +56,18 @@ export async function calculateReconciliation(
   if (bioError) throw bioError;
   console.log(`✅ Found ${absenceRecords?.length || 0} absence records`);
 
-  // Step 3: Batch-load approved absences from consolidated table
+  // Step 3: Batch-load approved absences from consolidated table (excluding rejected)
   console.log('📋 Step 3: Batch-loading approved absences from consolidated table...');
   const { data: approvedAbsences, error: approvedError } = await supabase
     .from('approved_absences_consolidated')
-    .select('employee_id, coverage_date, coverage_type, leave_type, regularization_reason')
+    .select('employee_id, coverage_date, coverage_type, leave_type, regularization_reason, approval_status')
     .in('employee_id', delhiEmployeeIds)
     .gte('coverage_date', startDateStr)
-    .lte('coverage_date', endDateStr);
+    .lte('coverage_date', endDateStr)
+    .neq('approval_status', 'Rejected');
 
   if (approvedError) throw approvedError;
-  console.log(`✅ Loaded ${approvedAbsences?.length || 0} approved absence records`);
+  console.log(`✅ Loaded ${approvedAbsences?.length || 0} approved/pending absence records (rejected excluded)`);
 
   // Create Map for O(1) lookups: "employeeId|date" -> array of coverages
   console.log('🗺️ Step 4: Building lookup map...');
