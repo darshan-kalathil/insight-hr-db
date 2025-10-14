@@ -51,7 +51,9 @@ export async function calculateReconciliation(
     .in('employee_id', delhiEmployeeIds)
     .eq('status', 'Absent')
     .gte('attendance_date', startDateStr)
-    .lte('attendance_date', endDateStr);
+    .lte('attendance_date', endDateStr)
+    .order('attendance_date', { ascending: true })
+    .limit(10000);
 
   if (bioError) throw bioError;
   console.log(`✅ Found ${absenceRecords?.length || 0} absence records`);
@@ -64,7 +66,9 @@ export async function calculateReconciliation(
     .in('employee_id', delhiEmployeeIds)
     .gte('coverage_date', startDateStr)
     .lte('coverage_date', endDateStr)
-    .neq('approval_status', 'Rejected');
+    .neq('approval_status', 'Rejected')
+    .order('coverage_date', { ascending: true })
+    .limit(10000);
 
   if (approvedError) throw approvedError;
   console.log(`✅ Loaded ${approvedAbsences?.length || 0} approved/pending absence records (rejected excluded)`);
