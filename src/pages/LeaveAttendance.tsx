@@ -55,7 +55,23 @@ const LeaveAttendance = () => {
         return `${year}-${month}-${day}`;
       }
 
-      // Fall back to standard date parsing (e.g., "22-Oct-2025")
+      // Try DD-MMM-YYYY format (e.g., "22-Oct-2025") WITHOUT timezone conversion
+      const ddmmmyyyyMatch = dateOnly.match(/^(\d{2})-([A-Za-z]{3})-(\d{4})$/);
+      if (ddmmmyyyyMatch) {
+        const [_, day, monthName, year] = ddmmmyyyyMatch;
+        // Map month names to month numbers
+        const monthMap: { [key: string]: string } = {
+          'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
+          'may': '05', 'jun': '06', 'jul': '07', 'aug': '08',
+          'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+        };
+        const month = monthMap[monthName.toLowerCase()];
+        if (month) {
+          return `${year}-${month}-${day}`;
+        }
+      }
+
+      // Fall back to standard date parsing only as last resort
       const date = new Date(dateOnly);
       if (!isNaN(date.getTime())) {
         return date.toISOString().split('T')[0];
