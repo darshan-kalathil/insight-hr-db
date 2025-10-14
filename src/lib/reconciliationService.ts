@@ -79,9 +79,8 @@ export async function calculateReconciliation(
 
   let totalProcessed = 0;
   let unapprovedCount = 0;
-  const statusUpdates = [];
 
-  // Step 5: Process each absence record with consolidated table lookup
+  // Step 5: Process each absence record and update statuses
   console.log('⚡ Step 5: Processing absence records with consolidated table lookups...');
   for (const record of absenceRecords || []) {
     totalProcessed++;
@@ -104,30 +103,21 @@ export async function calculateReconciliation(
       unapprovedCount++; // No coverage = unapproved absence
     }
 
-    // Only update if status changed (optimization)
+    // Update the status if it changed
     if (record.status !== newStatus) {
-      statusUpdates.push({
-        employee_id: record.employee_id,
-        attendance_date: record.attendance_date,
-        status: newStatus
-      });
+      const { error: updateError } = await supabase
+        .from('biometric_attendance')
+        .update({ status: newStatus })
+        .eq('employee_id', record.employee_id)
+        .eq('attendance_date', record.attendance_date);
+
+      if (updateError) {
+        console.error('Failed to update status:', updateError);
+      }
     }
   }
 
   console.log(`✅ Processed ${totalProcessed} records, found ${unapprovedCount} unapproved absences`);
-  
-  // Step 6: Batch update biometric attendance statuses
-  console.log(`💾 Step 6: Batch updating ${statusUpdates.length} biometric attendance records...`);
-  if (statusUpdates.length > 0) {
-    const { error: updateError } = await supabase
-      .from('biometric_attendance')
-      .upsert(statusUpdates, {
-        onConflict: 'employee_id,attendance_date'
-      });
-
-    if (updateError) throw updateError;
-    console.log('✅ Batch update completed successfully');
-  }
 
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
   console.log(`🎉 Reconciliation completed in ${totalTime}s`);
