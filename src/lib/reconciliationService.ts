@@ -43,35 +43,59 @@ export async function calculateReconciliation(
 
   const delhiEmployeeIds = delhiEmployees.map(e => e.id);
 
-  // Step 2: Get biometric attendance records with "Absent" status for Delhi employees
+  // Step 2: Get biometric attendance records with "Absent" status for Delhi employees (with pagination)
   console.log('📋 Step 2: Fetching absent biometric attendance records...');
-  const { data: absenceRecords, error: bioError } = await supabase
-    .from('biometric_attendance')
-    .select('employee_id, attendance_date, status')
-    .in('employee_id', delhiEmployeeIds)
-    .eq('status', 'Absent')
-    .gte('attendance_date', startDateStr)
-    .lte('attendance_date', endDateStr)
-    .order('attendance_date', { ascending: true })
-    .limit(10000);
+  let absenceRecords: any[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  
+  while (true) {
+    const { data, error } = await supabase
+      .from('biometric_attendance')
+      .select('employee_id, attendance_date, status')
+      .in('employee_id', delhiEmployeeIds)
+      .eq('status', 'Absent')
+      .gte('attendance_date', startDateStr)
+      .lte('attendance_date', endDateStr)
+      .order('attendance_date', { ascending: true })
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+    
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    
+    absenceRecords.push(...data);
+    if (data.length < pageSize) break;
+    page++;
+  }
+  
+  console.log(`✅ Found ${absenceRecords.length} absence records`);
 
-  if (bioError) throw bioError;
-  console.log(`✅ Found ${absenceRecords?.length || 0} absence records`);
-
-  // Step 3: Batch-load approved absences from consolidated table (excluding rejected)
+  // Step 3: Batch-load approved absences from consolidated table (excluding rejected, with pagination)
   console.log('📋 Step 3: Batch-loading approved absences from consolidated table...');
-  const { data: approvedAbsences, error: approvedError } = await supabase
-    .from('approved_absences_consolidated')
-    .select('employee_id, coverage_date, coverage_type, leave_type, regularization_reason, approval_status')
-    .in('employee_id', delhiEmployeeIds)
-    .gte('coverage_date', startDateStr)
-    .lte('coverage_date', endDateStr)
-    .neq('approval_status', 'Rejected')
-    .order('coverage_date', { ascending: true })
-    .limit(10000);
-
-  if (approvedError) throw approvedError;
-  console.log(`✅ Loaded ${approvedAbsences?.length || 0} approved/pending absence records (rejected excluded)`);
+  let approvedAbsences: any[] = [];
+  let page2 = 0;
+  const pageSize2 = 1000;
+  
+  while (true) {
+    const { data, error } = await supabase
+      .from('approved_absences_consolidated')
+      .select('employee_id, coverage_date, coverage_type, leave_type, regularization_reason, approval_status')
+      .in('employee_id', delhiEmployeeIds)
+      .gte('coverage_date', startDateStr)
+      .lte('coverage_date', endDateStr)
+      .neq('approval_status', 'Rejected')
+      .order('coverage_date', { ascending: true })
+      .range(page2 * pageSize2, (page2 + 1) * pageSize2 - 1);
+    
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    
+    approvedAbsences.push(...data);
+    if (data.length < pageSize2) break;
+    page2++;
+  }
+  
+  console.log(`✅ Loaded ${approvedAbsences.length} approved/pending absence records (rejected excluded)`);
 
   // Create Map for O(1) lookups: "employeeId|date" -> array of coverages
   console.log('🗺️ Step 4: Building lookup map...');
