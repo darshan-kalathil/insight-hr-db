@@ -69,10 +69,10 @@ export const useEmployeeLeaveRegularization = (
       let unapprovedData: any[] = [];
       if (isDelhiEmployee) {
         let unapprovedQuery = supabase
-          .from('attendance_reconciliation')
+          .from('biometric_attendance')
           .select('*')
           .eq('employee_id', employeeId)
-          .eq('is_unapproved_absence', true);
+          .eq('status', 'Absent');
 
         if (startDate) {
           unapprovedQuery = unapprovedQuery.gte('attendance_date', format(startDate, 'yyyy-MM-dd'));

@@ -244,20 +244,10 @@ export const UnapprovedAbsences = () => {
                       <TableCell>{format(new Date(detail.attendance_date), 'PPP')}</TableCell>
                       <TableCell>{format(new Date(detail.attendance_date), 'EEEE')}</TableCell>
                       <TableCell>
-                        <Badge variant="destructive">{detail.biometric_status}</Badge>
+                        <Badge variant="destructive">{detail.status}</Badge>
                       </TableCell>
                       <TableCell>
-                        {detail.leave_type ? (
-                          <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400">
-                            Leave: {detail.leave_type}
-                          </Badge>
-                        ) : detail.regularization_reason ? (
-                          <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-400">
-                            Reg: {detail.regularization_reason}
-                          </Badge>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Needs leave or regularization entry</span>
-                        )}
+                        <span className="text-sm text-muted-foreground">Needs leave or regularization entry</span>
                       </TableCell>
                     </TableRow>
                   ))}

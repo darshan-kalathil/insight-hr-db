@@ -79,7 +79,7 @@ export async function calculateReconciliation(
 
   let totalProcessed = 0;
   let unapprovedCount = 0;
-  const reconciliationRecords = [];
+  const statusUpdates = [];
 
   // Step 5: Process each absence record with consolidated table lookup
   console.log('⚡ Step 5: Processing absence records with consolidated table lookups...');
@@ -93,43 +93,40 @@ export async function calculateReconciliation(
     const leaveCoverage = coverages.find(c => c.coverage_type === 'Leave');
     const regCoverage = coverages.find(c => c.coverage_type === 'Regularization');
 
-    const hasLeave = !!leaveCoverage;
-    const hasRegularization = !!regCoverage;
-    const leaveType = leaveCoverage?.leave_type || null;
-    const regularizationReason = regCoverage?.regularization_reason || null;
-
-    const isUnapproved = !hasLeave && !hasRegularization;
-    if (isUnapproved) {
-      unapprovedCount++;
+    // Determine new status based on coverage
+    let newStatus = 'Absent'; // Default if no coverage found
+    
+    if (leaveCoverage) {
+      newStatus = leaveCoverage.leave_type; // e.g., "Work From Home", "Sick Leave"
+    } else if (regCoverage) {
+      newStatus = regCoverage.regularization_reason; // e.g., "Forgot to Punch"
+    } else {
+      unapprovedCount++; // No coverage = unapproved absence
     }
 
-    // Collect reconciliation record for batch upsert
-    reconciliationRecords.push({
-      employee_id: record.employee_id,
-      attendance_date: record.attendance_date,
-      is_unapproved_absence: isUnapproved,
-      biometric_status: record.status,
-      has_leave: hasLeave,
-      has_regularization: hasRegularization,
-      leave_type: leaveType,
-      regularization_reason: regularizationReason,
-      calculated_at: new Date().toISOString()
-    });
+    // Only update if status changed (optimization)
+    if (record.status !== newStatus) {
+      statusUpdates.push({
+        employee_id: record.employee_id,
+        attendance_date: record.attendance_date,
+        status: newStatus
+      });
+    }
   }
 
   console.log(`✅ Processed ${totalProcessed} records, found ${unapprovedCount} unapproved absences`);
   
-  // Step 6: Batch upsert all reconciliation records
-  console.log(`💾 Step 6: Batch upserting ${reconciliationRecords.length} reconciliation records...`);
-  if (reconciliationRecords.length > 0) {
-    const { error: upsertError } = await supabase
-      .from('attendance_reconciliation')
-      .upsert(reconciliationRecords, {
+  // Step 6: Batch update biometric attendance statuses
+  console.log(`💾 Step 6: Batch updating ${statusUpdates.length} biometric attendance records...`);
+  if (statusUpdates.length > 0) {
+    const { error: updateError } = await supabase
+      .from('biometric_attendance')
+      .upsert(statusUpdates, {
         onConflict: 'employee_id,attendance_date'
       });
 
-    if (upsertError) throw upsertError;
-    console.log('✅ Batch upsert completed successfully');
+    if (updateError) throw updateError;
+    console.log('✅ Batch update completed successfully');
   }
 
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);

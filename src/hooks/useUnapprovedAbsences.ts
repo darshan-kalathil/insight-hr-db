@@ -7,12 +7,12 @@ export const useUnapprovedAbsences = (startDate?: Date, endDate?: Date, statusFi
     queryKey: ['unapproved-absences', startDate, endDate, statusFilter],
     queryFn: async () => {
       let query = supabase
-        .from('attendance_reconciliation')
+        .from('biometric_attendance')
         .select(`
           *,
           employees!inner(id, empl_no, name, location, status)
         `)
-        .eq('is_unapproved_absence', true)
+        .eq('status', 'Absent')
         .eq('employees.location', 'Delhi');
 
       // Apply status filter
@@ -62,7 +62,7 @@ export const useUnapprovedAbsences = (startDate?: Date, endDate?: Date, statusFi
         employeeSummary[empId].count++;
         employeeSummary[empId].dates.push({
           date: record.attendance_date,
-          biometricStatus: record.biometric_status
+          biometricStatus: record.status
         });
       });
 
@@ -83,10 +83,10 @@ export const useEmployeeAbsenceDetails = (employeeId: string, startDate?: Date, 
     queryKey: ['employee-absence-details', employeeId, startDate, endDate],
     queryFn: async () => {
       let query = supabase
-        .from('attendance_reconciliation')
+        .from('biometric_attendance')
         .select('*')
         .eq('employee_id', employeeId)
-        .eq('is_unapproved_absence', true)
+        .eq('status', 'Absent')
         .order('attendance_date', { ascending: false });
 
       if (startDate) {

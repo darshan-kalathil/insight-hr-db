@@ -503,24 +503,7 @@ const LeaveAttendance = () => {
           }
         }
 
-        // Trigger reconciliation calculation
-        const dateRange = results.data.reduce((acc, record) => {
-          const date = new Date(record.attendance_date);
-          return {
-            min: !acc.min || date < acc.min ? date : acc.min,
-            max: !acc.max || date > acc.max ? date : acc.max
-          };
-        }, {
-          min: null as Date | null,
-          max: null as Date | null
-        });
-        if (dateRange.min && dateRange.max) {
-          await calculateReconciliation(dateRange.min, dateRange.max);
-          // Invalidate unapproved absences queries to refresh the UI
-          queryClient.invalidateQueries({
-            queryKey: ['unapproved-absences']
-          });
-        }
+        // Biometric data uploaded - reconciliation will be triggered manually
         await logActivity({
           actionType: 'create',
           entityType: 'employee',
@@ -530,7 +513,7 @@ const LeaveAttendance = () => {
       setBiometricResult(results);
       toast({
         title: 'Biometric Data Imported',
-        description: `Valid: ${results.valid}, Skipped: ${results.skipped}, Errors: ${results.errors}`
+        description: `Valid: ${results.valid}, Skipped: ${results.skipped}, Errors: ${results.errors}. Go to Unapproved Absences tab to run reconciliation.`
       });
     } catch (error: any) {
       toast({
