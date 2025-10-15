@@ -142,12 +142,13 @@ const Analytics = () => {
         // Must have joined on or before the "To Date"
         if (joinDate > periodTo) return false;
         
-        // Either currently active, or if inactive, left after the "To Date"
-        if (e.status === 'Active' || e.status === 'Serving Notice Period') return true;
+        // If currently active with no exit date, include them
+        if (e.status === 'Active' && !e.date_of_exit) return true;
         
-        // If inactive, check if they were still active on the "To Date"
+        // For all other cases (Serving Notice Period or Inactive), check exit date
         if (e.date_of_exit) {
           const exitDate = new Date(e.date_of_exit);
+          // Include only if they were still employed on the "To Date"
           return exitDate > periodTo;
         }
         
