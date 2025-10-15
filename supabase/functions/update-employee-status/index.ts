@@ -22,13 +22,13 @@ Deno.serve(async (req) => {
     // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split('T')[0];
     
-    // Find all employees with status "Serving Notice Period" where date_of_exit <= today
+    // Find all employees with status "Serving Notice Period" where date_of_exit < today
     const { data: employeesToUpdate, error: fetchError } = await supabase
       .from('employees')
       .select('id, name, date_of_exit')
       .eq('status', 'Serving Notice Period')
       .not('date_of_exit', 'is', null)
-      .lte('date_of_exit', today);
+      .lt('date_of_exit', today);
 
     if (fetchError) {
       console.error('Error fetching employees:', fetchError);
