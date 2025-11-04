@@ -20,13 +20,12 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
   // Create a map for quick lookup
   const dataMap = new Map(data.map(d => [d.date, d]));
 
-  // Get max count for color scaling
-  const maxCount = Math.max(...data.map(d => d.count), 1);
-
-  // Get color intensity based on count
+  // Get color intensity based on count (10+ employees = darkest)
   const getColorIntensity = (count: number) => {
     if (count === 0) return 'bg-muted/20';
-    const intensity = Math.min(count / maxCount, 1);
+    
+    // Scale based on 10 employees being the maximum (darkest shade)
+    const intensity = Math.min(count / 10, 1);
     
     if (intensity <= 0.2) return 'bg-primary/20';
     if (intensity <= 0.4) return 'bg-primary/40';
