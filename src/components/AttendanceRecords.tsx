@@ -19,6 +19,7 @@ interface AttendanceRecord {
   out_time: string | null;
   duration: string | null;
   status: string;
+  employee_name?: string;
 }
 
 export const AttendanceRecords = () => {
@@ -33,7 +34,7 @@ export const AttendanceRecords = () => {
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance_records')
         .select('*')
         .gte('date', format(dateRange.from, 'yyyy-MM-dd'))
@@ -41,8 +42,27 @@ export const AttendanceRecords = () => {
         .order('date', { ascending: true })
         .order('employee_code', { ascending: true });
 
-      if (error) throw error;
-      setRecords(data || []);
+      if (attendanceError) throw attendanceError;
+
+      // Fetch employee names
+      const employeeCodes = [...new Set(attendanceData?.map(r => r.employee_code) || [])];
+      const { data: employeesData, error: employeesError } = await supabase
+        .from('employees')
+        .select('empl_no, name')
+        .in('empl_no', employeeCodes);
+
+      if (employeesError) throw employeesError;
+
+      // Create a map of employee codes to names
+      const employeeMap = new Map(employeesData?.map(e => [e.empl_no, e.name]) || []);
+
+      // Merge the data
+      const recordsWithNames = attendanceData?.map(record => ({
+        ...record,
+        employee_name: employeeMap.get(record.employee_code)
+      })) || [];
+
+      setRecords(recordsWithNames);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -110,7 +130,7 @@ export const AttendanceRecords = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Employee Code</TableHead>
+                  <TableHead>Employee Name</TableHead>
                   <TableHead>In Time</TableHead>
                   <TableHead>Out Time</TableHead>
                   <TableHead>Duration</TableHead>
@@ -121,7 +141,7 @@ export const AttendanceRecords = () => {
                 {records.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell>{format(new Date(record.date), 'dd MMM yyyy')}</TableCell>
-                    <TableCell>{record.employee_code}</TableCell>
+                    <TableCell>{record.employee_name || record.employee_code}</TableCell>
                     <TableCell>{record.in_time || '-'}</TableCell>
                     <TableCell>{record.out_time || '-'}</TableCell>
                     <TableCell>{record.duration || '-'}</TableCell>
