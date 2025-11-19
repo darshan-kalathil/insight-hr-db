@@ -47,6 +47,42 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_records: {
+        Row: {
+          created_at: string
+          date: string
+          duration: string | null
+          employee_code: string
+          id: string
+          in_time: string | null
+          out_time: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          duration?: string | null
+          employee_code: string
+          id?: string
+          in_time?: string | null
+          out_time?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          duration?: string | null
+          employee_code?: string
+          id?: string
+          in_time?: string | null
+          out_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           birthday: string | null
