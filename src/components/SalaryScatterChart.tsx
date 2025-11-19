@@ -53,9 +53,9 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
       const variablePercentage = levelRange?.variable_pay_percentage || 0;
       
       // Salary already includes EPF, so use as-is for fixed_epf mode
-      let displaySalary = emp.salary; // Fixed + EPF (as uploaded)
+      let displaySalary = emp.salary; // Fixed (as uploaded)
       if (salaryMode === 'ctc') {
-        // CTC = Fixed + EPF (already in salary) + Variable Pay
+        // CTC = Fixed (already in salary) + Variable Pay
         displaySalary = emp.salary + (emp.salary * (variablePercentage / 100));
       }
       
@@ -132,7 +132,7 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
-      // originalSalary already includes Fixed + EPF
+      // originalSalary already includes Fixed
       const fixedWithEpf = data.originalSalary;
       
       // Get variable pay percentage for this level
@@ -156,7 +156,7 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
           <p className="font-bold text-lg">{data.name}</p>
           <p className="text-sm">Level: {data.level}</p>
           <div className="border-t border-gray-600 my-2 pt-2 space-y-1">
-            <p className="text-sm font-bold">Fixed + EPF: {formatCurrency(fixedWithEpf)}</p>
+            <p className="text-sm font-bold">Fixed: {formatCurrency(fixedWithEpf)}</p>
             <p className="text-sm">Variable ({variablePercentage}%): {formatCurrency(variable)}</p>
             <p className="text-sm border-t border-gray-600 pt-1 mt-1 font-bold">CTC: {formatCurrency(ctc)}</p>
           </div>
@@ -180,7 +180,7 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="fixed_epf">Fixed + EPF</SelectItem>
+              <SelectItem value="fixed_epf">Fixed</SelectItem>
               <SelectItem value="ctc">CTC (with Variable)</SelectItem>
             </SelectContent>
           </Select>
@@ -220,10 +220,10 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
           <YAxis
             type="number"
             dataKey="salary"
-            name={salaryMode === 'ctc' ? 'CTC' : 'Fixed + EPF'}
+            name={salaryMode === 'ctc' ? 'CTC' : 'Fixed'}
             domain={[0, 'auto']}
             label={{ 
-              value: salaryMode === 'ctc' ? 'CTC (Lakhs)' : 'Fixed + EPF (Lakhs)', 
+              value: salaryMode === 'ctc' ? 'CTC (Lakhs)' : 'Fixed (Lakhs)', 
               angle: -90, 
               position: 'insideLeft' 
             }}
