@@ -55,7 +55,7 @@ const Salary = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Salary Visualization</h1>
           <p className="text-muted-foreground">
-            View salary distribution across all levels (uploaded salary includes Fixed + EPF)
+            View salary distribution across all levels (uploaded salary includes Fixed)
           </p>
         </div>
 
