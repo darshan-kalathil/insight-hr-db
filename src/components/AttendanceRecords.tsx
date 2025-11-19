@@ -38,9 +38,7 @@ export const AttendanceRecords = () => {
         .from('attendance_records')
         .select('*')
         .gte('date', format(dateRange.from, 'yyyy-MM-dd'))
-        .lte('date', format(dateRange.to, 'yyyy-MM-dd'))
-        .order('date', { ascending: true })
-        .order('employee_code', { ascending: true });
+        .lte('date', format(dateRange.to, 'yyyy-MM-dd'));
 
       if (attendanceError) throw attendanceError;
 
@@ -56,11 +54,23 @@ export const AttendanceRecords = () => {
       // Create a map of employee codes to names
       const employeeMap = new Map(employeesData?.map(e => [e.empl_no, e.name]) || []);
 
-      // Merge the data
+      // Merge the data and sort: month first, then employee code, then date
       const recordsWithNames = attendanceData?.map(record => ({
         ...record,
-        employee_name: employeeMap.get(record.employee_code)
+        employee_name: employeeMap.get(record.employee_code),
+        year_month: record.date.substring(0, 7) // Extract YYYY-MM for sorting
       })) || [];
+
+      // Sort by year-month, then employee_code, then date
+      recordsWithNames.sort((a, b) => {
+        if (a.year_month !== b.year_month) {
+          return a.year_month.localeCompare(b.year_month);
+        }
+        if (a.employee_code !== b.employee_code) {
+          return a.employee_code.localeCompare(b.employee_code);
+        }
+        return a.date.localeCompare(b.date);
+      });
 
       setRecords(recordsWithNames);
     } catch (error: any) {
