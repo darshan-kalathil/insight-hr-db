@@ -185,7 +185,7 @@ export const AttendanceUpload = ({ onImportComplete }: AttendanceUploadProps) =>
         const inTime = parseTime(row['In Time']);
         const outTime = parseTime(row['Out Time']);
         const duration = calculateDuration(inTime, outTime);
-        const status = row['Status'] || '';
+        const status = row['Attendance'] || '';
 
         const key = `${parsedDate}_${formattedCode}`;
         recordsMap.set(key, {
