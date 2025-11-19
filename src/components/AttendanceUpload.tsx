@@ -103,8 +103,16 @@ export const AttendanceUpload = ({ onImportComplete }: AttendanceUploadProps) =>
   const parseTime = (timeValue: any): string | null => {
     if (!timeValue) return null;
 
-    // If it's a string in HH:MM format
-    const timeStr = String(timeValue);
+    const timeStr = String(timeValue).trim();
+    
+    // Try HH:MM:SS format first
+    const timeWithSecondsMatch = timeStr.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+    if (timeWithSecondsMatch) {
+      const [, hours, minutes, seconds] = timeWithSecondsMatch;
+      return `${hours.padStart(2, '0')}:${minutes}:${seconds}`;
+    }
+
+    // Try HH:MM format (without seconds)
     const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})$/);
     if (timeMatch) {
       const [, hours, minutes] = timeMatch;
