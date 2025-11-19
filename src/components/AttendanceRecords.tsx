@@ -38,7 +38,7 @@ export const AttendanceRecords = () => {
         .select('*')
         .gte('date', format(dateRange.from, 'yyyy-MM-dd'))
         .lte('date', format(dateRange.to, 'yyyy-MM-dd'))
-        .order('date', { ascending: false })
+        .order('date', { ascending: true })
         .order('employee_code', { ascending: true });
 
       if (error) throw error;
