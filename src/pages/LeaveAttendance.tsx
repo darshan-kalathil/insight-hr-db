@@ -1,5 +1,5 @@
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AttendanceUpload } from '@/components/AttendanceUpload';
 
 const LeaveAttendance = () => {
   return (
@@ -8,21 +8,11 @@ const LeaveAttendance = () => {
         <div>
           <h1 className="text-3xl font-bold">Leave & Attendance</h1>
           <p className="text-muted-foreground mt-2">
-            This module is under reconstruction. New features coming soon.
+            Upload and manage employee attendance records.
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              The Leave & Attendance module is being rebuilt from scratch.
-              This is a blank slate ready for new features.
-            </p>
-          </CardContent>
-        </Card>
+        <AttendanceUpload />
       </div>
     </DashboardLayout>
   );
