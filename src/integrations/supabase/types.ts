@@ -152,6 +152,45 @@ export type Database = {
         }
         Relationships: []
       }
+      leave_records: {
+        Row: {
+          approval_status: string
+          created_at: string
+          days_hours_taken: number
+          employee_code: string
+          from_date: string
+          id: string
+          leave_type: string
+          to_date: string
+          updated_at: string
+          zoho_link_id: string
+        }
+        Insert: {
+          approval_status: string
+          created_at?: string
+          days_hours_taken: number
+          employee_code: string
+          from_date: string
+          id?: string
+          leave_type: string
+          to_date: string
+          updated_at?: string
+          zoho_link_id: string
+        }
+        Update: {
+          approval_status?: string
+          created_at?: string
+          days_hours_taken?: number
+          employee_code?: string
+          from_date?: string
+          id?: string
+          leave_type?: string
+          to_date?: string
+          updated_at?: string
+          zoho_link_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
