@@ -53,8 +53,35 @@ export const AttendanceUpload = ({ onImportComplete }: AttendanceUploadProps) =>
       return `${year}-${month}-${day}`;
     }
 
+    // If it's a number (Excel serial date)
+    if (typeof dateValue === 'number') {
+      // Excel stores dates as days since 1900-01-01 (with a leap year bug)
+      // JavaScript Date starts from 1970-01-01
+      const excelEpoch = new Date(1900, 0, 1);
+      const daysOffset = dateValue - 2; // -2 to account for Excel's 1900 leap year bug and 0-indexing
+      const date = new Date(excelEpoch.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${year}-${month}-${day}`;
+    }
+
     // If it's a string
     const dateStr = String(dateValue);
+
+    // Try numeric string (Excel serial as string)
+    const numericValue = parseFloat(dateStr);
+    if (!isNaN(numericValue) && numericValue > 1000) {
+      const excelEpoch = new Date(1900, 0, 1);
+      const daysOffset = numericValue - 2;
+      const date = new Date(excelEpoch.getTime() + daysOffset * 24 * 60 * 60 * 1000);
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${year}-${month}-${day}`;
+    }
 
     // Try DD/MM/YYYY format
     const slashMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
