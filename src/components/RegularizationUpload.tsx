@@ -11,6 +11,7 @@ type ImportResult = {
   inserted: number;
   updated: number;
   skipped: number;
+  duplicates: number;
   errors: string[];
 };
 
@@ -105,6 +106,7 @@ export const RegularizationUpload = ({ onImportComplete }: RegularizationUploadP
         inserted: 0,
         updated: 0,
         skipped: 0,
+        duplicates: 0,
         errors: []
       };
 
@@ -155,6 +157,12 @@ export const RegularizationUpload = ({ onImportComplete }: RegularizationUploadP
 
           // Use unique key to deduplicate (keep last occurrence)
           const key = `${employeeId}_${parsedDate}`;
+          
+          // Track if this is a duplicate
+          if (recordsMap.has(key)) {
+            importResult.duplicates++;
+          }
+          
           recordsMap.set(key, {
             employee_code: employeeId,
             attendance_day: parsedDate,
@@ -190,7 +198,7 @@ export const RegularizationUpload = ({ onImportComplete }: RegularizationUploadP
 
       toast({
         title: 'Import Complete',
-        description: `Processed ${importResult.inserted} regularization records successfully.`,
+        description: `Processed ${importResult.inserted} records${importResult.duplicates > 0 ? `. ${importResult.duplicates} duplicates removed` : ''}.`,
       });
 
       onImportComplete?.();
@@ -237,7 +245,8 @@ export const RegularizationUpload = ({ onImportComplete }: RegularizationUploadP
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                 <li>Total rows: {result.total}</li>
                 <li>Processed: {result.inserted}</li>
-                <li>Skipped: {result.skipped}</li>
+                <li>Skipped (rejected): {result.skipped}</li>
+                <li>Duplicates removed: {result.duplicates}</li>
                 {result.errors.length > 0 && (
                   <li className="text-destructive">
                     Errors: {result.errors.length}
