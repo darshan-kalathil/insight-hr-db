@@ -1,7 +1,6 @@
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { AttendanceUpload } from '@/components/AttendanceUpload';
 import { LeaveUpload } from '@/components/LeaveUpload';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const LeaveAttendance = () => {
   return (
@@ -14,18 +13,10 @@ const LeaveAttendance = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="attendance" className="w-full">
-          <TabsList>
-            <TabsTrigger value="attendance">Attendance</TabsTrigger>
-            <TabsTrigger value="leave">Leave</TabsTrigger>
-          </TabsList>
-          <TabsContent value="attendance" className="space-y-4">
-            <AttendanceUpload />
-          </TabsContent>
-          <TabsContent value="leave" className="space-y-4">
-            <LeaveUpload />
-          </TabsContent>
-        </Tabs>
+        <div className="grid gap-6">
+          <AttendanceUpload />
+          <LeaveUpload />
+        </div>
       </div>
     </DashboardLayout>
   );
