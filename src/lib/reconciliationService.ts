@@ -1,3 +1,7 @@
+// IMPORTANT: This file is preserved for future use.
+// The tables referenced here (biometric_attendance, approved_absences_consolidated)
+// have been dropped and need to be recreated before this service can be used again.
+
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
@@ -11,11 +15,24 @@ export interface ReconciliationResult {
 /**
  * Calculate reconciliation for biometric attendance records using consolidated table
  * Only processes Delhi-based employees
+ * 
+ * NOTE: Currently disabled - tables need to be recreated
  */
 export async function calculateReconciliation(
   startDate: Date,
   endDate: Date
 ): Promise<ReconciliationResult> {
+  // Temporarily return empty result until tables are recreated
+  return {
+    totalProcessed: 0,
+    unapprovedCount: 0,
+    updatedAt: new Date(),
+    delhiEmployeesOnly: 0
+  };
+  
+  /* ORIGINAL CODE - UNCOMMENT WHEN TABLES ARE RECREATED
+  
+  /*
   console.log('🔄 Starting reconciliation...', { startDate, endDate });
   const startTime = Date.now();
   
@@ -157,17 +174,26 @@ export async function calculateReconciliation(
     updatedAt: new Date(),
     delhiEmployeesOnly: delhiEmployees.length
   };
+  
+  */ // END ORIGINAL CODE
 }
 
 /**
  * Recalculate reconciliation for specific employee and date range
  * Used when leaves or regularizations are updated
+ * 
+ * NOTE: Currently disabled - tables need to be recreated
  */
 export async function recalculateForEmployee(
   employeeId: string,
   startDate: Date,
   endDate: Date
 ): Promise<void> {
+  // Temporarily disabled until tables are recreated
+  return;
+  
+  /* ORIGINAL CODE - UNCOMMENT WHEN TABLES ARE RECREATED
+  
   // Check if employee is from Delhi
   const { data: employee, error: empError } = await supabase
     .from('employees')
@@ -181,4 +207,6 @@ export async function recalculateForEmployee(
   }
 
   await calculateReconciliation(startDate, endDate);
+  
+  */ // END ORIGINAL CODE
 }
