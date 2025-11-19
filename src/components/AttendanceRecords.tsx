@@ -27,6 +27,7 @@ export const AttendanceRecords = () => {
   const { toast } = useToast();
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reconciling, setReconciling] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
     const fy = getCurrentFinancialYear();
@@ -106,6 +107,35 @@ export const AttendanceRecords = () => {
     }
   };
 
+  const runReconciliation = async () => {
+    setReconciling(true);
+    try {
+      const { data, error } = await supabase.rpc('reconcile_all_attendance', {
+        p_start_date: format(dateRange.from, 'yyyy-MM-dd'),
+        p_end_date: format(dateRange.to, 'yyyy-MM-dd')
+      });
+
+      if (error) throw error;
+
+      const result = data?.[0];
+      toast({
+        title: 'Reconciliation Complete',
+        description: `Processed ${result?.total_processed || 0} records. Updated ${result?.total_updated || 0} statuses. (${result?.delhi_employees || 0} Delhi employees, ${result?.non_delhi_employees || 0} other locations)`,
+      });
+
+      // Refresh the records after reconciliation
+      await fetchRecords();
+    } catch (error: any) {
+      toast({
+        title: 'Reconciliation Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setReconciling(false);
+    }
+  };
+
   useEffect(() => {
     fetchRecords();
   }, [dateRange]);
@@ -163,6 +193,14 @@ export const AttendanceRecords = () => {
               ))}
             </SelectContent>
           </Select>
+
+          <Button 
+            onClick={runReconciliation} 
+            disabled={reconciling}
+            variant="outline"
+          >
+            {reconciling ? 'Reconciling...' : 'Run Reconciliation'}
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
