@@ -1,6 +1,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { AttendanceUpload } from '@/components/AttendanceUpload';
 import { LeaveUpload } from '@/components/LeaveUpload';
+import { RegularizationUpload } from '@/components/RegularizationUpload';
 
 const LeaveAttendance = () => {
   return (
@@ -16,6 +17,7 @@ const LeaveAttendance = () => {
         <div className="grid gap-6">
           <AttendanceUpload />
           <LeaveUpload />
+          <RegularizationUpload />
         </div>
       </div>
     </DashboardLayout>
