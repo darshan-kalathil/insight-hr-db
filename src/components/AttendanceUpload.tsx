@@ -207,41 +207,33 @@ export const AttendanceUpload = ({ onImportComplete }: AttendanceUploadProps) =>
 
       const validEmployeeCodes = new Set(validEmployees?.map(e => e.empl_no) || []);
 
-      // Insert/update records
-      for (const record of recordsMap.values()) {
+      // Filter valid records
+      const validRecords = Array.from(recordsMap.values()).filter(record => {
         if (!validEmployeeCodes.has(record.employee_code)) {
           importResult.errors.push(`Employee code ${record.employee_code} not found in employees table`);
           importResult.skipped++;
-          continue;
+          return false;
         }
+        return true;
+      });
 
+      // Batch upsert all valid records at once
+      if (validRecords.length > 0) {
         const { error } = await supabase
           .from('attendance_records')
-          .upsert(record, { onConflict: 'date,employee_code' });
+          .upsert(validRecords, { onConflict: 'date,employee_code' });
 
         if (error) {
-          importResult.errors.push(`Error for ${record.employee_code} on ${record.date}: ${error.message}`);
+          importResult.errors.push(`Batch upsert error: ${error.message}`);
         } else {
-          // Check if it was an insert or update by trying to find existing record
-          const { data: existing } = await supabase
-            .from('attendance_records')
-            .select('id')
-            .eq('date', record.date)
-            .eq('employee_code', record.employee_code)
-            .single();
-
-          if (existing) {
-            importResult.updated++;
-          } else {
-            importResult.inserted++;
-          }
+          importResult.inserted = validRecords.length;
         }
       }
 
       setResult(importResult);
 
       if (importResult.errors.length === 0) {
-        toast.success(`Import complete: ${importResult.inserted} inserted, ${importResult.updated} updated, ${importResult.skipped} skipped`);
+        toast.success(`Import complete: ${importResult.inserted} records processed, ${importResult.skipped} skipped`);
       } else {
         toast.error(`Import completed with errors. Check the results below.`);
       }
@@ -287,10 +279,8 @@ export const AttendanceUpload = ({ onImportComplete }: AttendanceUploadProps) =>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>Total rows processed:</div>
               <div className="font-medium">{result.total}</div>
-              <div>Records inserted:</div>
+              <div>Records processed:</div>
               <div className="font-medium text-green-600">{result.inserted}</div>
-              <div>Records updated:</div>
-              <div className="font-medium text-blue-600">{result.updated}</div>
               <div>Records skipped:</div>
               <div className="font-medium text-yellow-600">{result.skipped}</div>
             </div>
