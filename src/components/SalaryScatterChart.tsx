@@ -132,16 +132,16 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
-      const fixedSalary = data.originalSalary;
+      // originalSalary already includes Fixed + EPF
+      const fixedWithEpf = data.originalSalary;
       
       // Get variable pay percentage for this level
       const levelRange = salaryRanges.find(r => normalizeLevel(r.level) === data.level);
       const variablePercentage = levelRange?.variable_pay_percentage || 0;
       
       // Calculate components
-      const epf = Math.round(fixedSalary * 0.06);
-      const variable = Math.round(fixedSalary * (variablePercentage / 100));
-      const ctc = fixedSalary + epf + variable;
+      const variable = Math.round(fixedWithEpf * (variablePercentage / 100));
+      const ctc = fixedWithEpf + variable;
       
       const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-IN', {
@@ -156,10 +156,9 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
           <p className="font-bold text-lg">{data.name}</p>
           <p className="text-sm">Level: {data.level}</p>
           <div className="border-t border-gray-600 my-2 pt-2 space-y-1">
-            <p className="text-sm font-bold">Fixed Salary: {formatCurrency(fixedSalary)}</p>
-            <p className="text-sm">EPF: {formatCurrency(epf)}</p>
+            <p className="text-sm font-bold">Fixed + EPF: {formatCurrency(fixedWithEpf)}</p>
             <p className="text-sm">Variable ({variablePercentage}%): {formatCurrency(variable)}</p>
-            <p className="text-sm border-t border-gray-600 pt-1 mt-1">CTC: {formatCurrency(ctc)}</p>
+            <p className="text-sm border-t border-gray-600 pt-1 mt-1 font-bold">CTC: {formatCurrency(ctc)}</p>
           </div>
         </div>
       );
