@@ -47,6 +47,45 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_coverage: {
+        Row: {
+          approval_status: string
+          coverage_date: string
+          coverage_reason: string
+          coverage_type: string
+          created_at: string | null
+          employee_code: string
+          id: string
+          source_id: string
+          source_table: string
+          updated_at: string | null
+        }
+        Insert: {
+          approval_status: string
+          coverage_date: string
+          coverage_reason: string
+          coverage_type: string
+          created_at?: string | null
+          employee_code: string
+          id?: string
+          source_id: string
+          source_table: string
+          updated_at?: string | null
+        }
+        Update: {
+          approval_status?: string
+          coverage_date?: string
+          coverage_reason?: string
+          coverage_type?: string
+          created_at?: string | null
+          employee_code?: string
+          id?: string
+          source_id?: string
+          source_table?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       attendance_records: {
         Row: {
           created_at: string
@@ -312,12 +351,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expand_leave_dates: {
+        Args: {
+          p_approval_status: string
+          p_employee_code: string
+          p_from_date: string
+          p_leave_type: string
+          p_source_id: string
+          p_to_date: string
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      reconcile_all_attendance: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          delhi_employees: number
+          non_delhi_employees: number
+          total_processed: number
+          total_updated: number
+        }[]
+      }
+      reconcile_attendance_range: {
+        Args: {
+          p_employee_code: string
+          p_end_date: string
+          p_start_date: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
