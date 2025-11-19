@@ -35,7 +35,7 @@ export const AttendanceRecords = () => {
 
   // Function to normalize status display
   const normalizeStatus = (status: string): string => {
-    if (status === 'Present (No Poutpunch)') {
+    if (status === 'Present (No OutPunch)' || status === 'Present (No Poutpunch)') {
       return 'Present';
     }
     return status;
