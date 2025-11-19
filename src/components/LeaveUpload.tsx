@@ -24,9 +24,9 @@ export const LeaveUpload = ({ onImportComplete }: LeaveUploadProps) => {
   const [result, setResult] = useState<ImportResult | null>(null);
 
   const extractEmployeeCode = (employeeId: string): string | null => {
-    // Extract ONDC-E-XXX from strings like "Amit Shrivastava ONDC-E-065"
-    const match = employeeId.match(/ONDC-E-\d+/);
-    return match ? match[0] : null;
+    // Extract ONDC-E-XXX or ONDC-C-XXX from strings like "ONDC-E-033 Santosh Adsul"
+    const match = String(employeeId).match(/^(ONDC-[EC]-\d+)/);
+    return match ? match[1] : null;
   };
 
   const parseDate = (dateValue: any): string | null => {
