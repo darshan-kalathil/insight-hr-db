@@ -119,8 +119,8 @@ export const RegularizationUpload = ({ onImportComplete }: RegularizationUploadP
 
       const validEmployeeCodes = new Set(employees?.map(emp => emp.empl_no) || []);
 
-      // Process records
-      const recordsToUpsert = [];
+      // Process records - use Map to deduplicate by employee_code + date
+      const recordsMap = new Map<string, any>();
 
       for (const row of jsonData as any[]) {
         try {
@@ -153,7 +153,9 @@ export const RegularizationUpload = ({ onImportComplete }: RegularizationUploadP
             continue;
           }
 
-          recordsToUpsert.push({
+          // Use unique key to deduplicate (keep last occurrence)
+          const key = `${employeeId}_${parsedDate}`;
+          recordsMap.set(key, {
             employee_code: employeeId,
             attendance_day: parsedDate,
             reason: reason || null,
@@ -165,6 +167,9 @@ export const RegularizationUpload = ({ onImportComplete }: RegularizationUploadP
           importResult.errors.push(`Error processing row: ${error}`);
         }
       }
+
+      // Convert map to array for upsert
+      const recordsToUpsert = Array.from(recordsMap.values());
 
       // Batch upsert
       if (recordsToUpsert.length > 0) {
