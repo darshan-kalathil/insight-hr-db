@@ -101,7 +101,24 @@ export const AttendanceUpload = ({ onImportComplete }: AttendanceUploadProps) =>
   };
 
   const parseTime = (timeValue: any): string | null => {
-    if (!timeValue) return null;
+    if (timeValue === null || timeValue === undefined || timeValue === '') return null;
+
+    // If it's already a Date object (Excel sometimes gives Date for time cells)
+    if (timeValue instanceof Date) {
+      const hours = timeValue.getHours().toString().padStart(2, '0');
+      const minutes = timeValue.getMinutes().toString().padStart(2, '0');
+      const seconds = timeValue.getSeconds().toString().padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    // If it's a number (Excel stores time as fraction of a day)
+    if (typeof timeValue === 'number') {
+      const totalSeconds = Math.round(timeValue * 24 * 60 * 60);
+      const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+      const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+      const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+      return `${hours}:${minutes}:${seconds}`;
+    }
 
     const timeStr = String(timeValue).trim();
     
