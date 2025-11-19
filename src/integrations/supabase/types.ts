@@ -83,6 +83,39 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_regularization: {
+        Row: {
+          approval_status: string
+          attendance_day: string
+          created_at: string
+          description: string | null
+          employee_code: string
+          id: string
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          approval_status: string
+          attendance_day: string
+          created_at?: string
+          description?: string | null
+          employee_code: string
+          id?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approval_status?: string
+          attendance_day?: string
+          created_at?: string
+          description?: string | null
+          employee_code?: string
+          id?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           birthday: string | null
