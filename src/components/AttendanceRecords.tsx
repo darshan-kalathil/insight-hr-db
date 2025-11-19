@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { getCurrentFinancialYear } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AttendanceRecord {
   id: string;
@@ -26,10 +27,31 @@ export const AttendanceRecords = () => {
   const { toast } = useToast();
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
     const fy = getCurrentFinancialYear();
     return { from: fy.startDate, to: fy.endDate };
   });
+
+  // Function to normalize status display
+  const normalizeStatus = (status: string): string => {
+    if (status === 'Present (No Poutpunch)') {
+      return 'Present';
+    }
+    return status;
+  };
+
+  // Get unique statuses for filter
+  const uniqueStatuses = useMemo(() => {
+    const statuses = new Set(records.map(r => normalizeStatus(r.status)));
+    return Array.from(statuses).sort();
+  }, [records]);
+
+  // Filter records based on selected status
+  const filteredRecords = useMemo(() => {
+    if (statusFilter === 'all') return records;
+    return records.filter(r => normalizeStatus(r.status) === statusFilter);
+  }, [records, statusFilter]);
 
   const fetchRecords = async () => {
     try {
@@ -95,7 +117,7 @@ export const AttendanceRecords = () => {
         <CardDescription>
           View all attendance records for the selected date range (default: current financial year)
         </CardDescription>
-        <div className="flex gap-4 mt-4">
+        <div className="flex gap-4 mt-4 flex-wrap">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-[200px]">
@@ -127,13 +149,27 @@ export const AttendanceRecords = () => {
               />
             </PopoverContent>
           </Popover>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              <SelectItem value="all">All Statuses</SelectItem>
+              {uniqueStatuses.map(status => (
+                <SelectItem key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
           <p className="text-muted-foreground text-center py-8">Loading records...</p>
-        ) : records.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">No records found for the selected date range</p>
+        ) : filteredRecords.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">No records found for the selected filters</p>
         ) : (
           <ScrollArea className="h-[500px]">
             <Table>
@@ -148,24 +184,27 @@ export const AttendanceRecords = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {records.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>{format(new Date(record.date), 'dd MMM yyyy')}</TableCell>
-                    <TableCell>{record.employee_name || record.employee_code}</TableCell>
-                    <TableCell>{record.in_time || '-'}</TableCell>
-                    <TableCell>{record.out_time || '-'}</TableCell>
-                    <TableCell>{record.duration || '-'}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        record.status === 'Present' ? 'bg-green-100 text-green-800' :
-                        record.status === 'Absent' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {record.status}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredRecords.map((record) => {
+                  const displayStatus = normalizeStatus(record.status);
+                  return (
+                    <TableRow key={record.id}>
+                      <TableCell>{format(new Date(record.date), 'dd MMM yyyy')}</TableCell>
+                      <TableCell>{record.employee_name || record.employee_code}</TableCell>
+                      <TableCell>{record.in_time || '-'}</TableCell>
+                      <TableCell>{record.out_time || '-'}</TableCell>
+                      <TableCell>{record.duration || '-'}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          displayStatus === 'Present' ? 'bg-green-100 text-green-800' :
+                          displayStatus === 'Absent' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {displayStatus}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </ScrollArea>
