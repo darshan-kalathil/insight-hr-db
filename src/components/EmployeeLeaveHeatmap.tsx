@@ -20,10 +20,22 @@ export const EmployeeLeaveHeatmap = ({ data, startDate, endDate, leaveTypes, reg
   const getColorForAbsence = (absenceType: string | null) => {
     if (!absenceType) return 'bg-muted/20';
     
-    // Check if it's a leave type (blue) or regularization type (orange)
+    // Check if it's a leave type (blue)
     if (leaveTypes.includes(absenceType)) {
       return 'bg-blue-500';
-    } else if (regularizationTypes.includes(absenceType)) {
+    }
+    
+    // Check specific regularization types
+    if (absenceType === 'Work From Home') {
+      return 'bg-orange-500';
+    }
+    
+    if (absenceType === 'Attending Business Events' || absenceType === 'Travelling For Work') {
+      return 'bg-green-500';
+    }
+    
+    // Default for other regularization types
+    if (regularizationTypes.includes(absenceType)) {
       return 'bg-orange-500';
     }
     
@@ -61,15 +73,18 @@ export const EmployeeLeaveHeatmap = ({ data, startDate, endDate, leaveTypes, reg
     <div className="w-full overflow-x-auto">
       <div className="min-w-max">
         {/* Legend */}
-        <div className="flex items-center gap-4 mb-4 text-sm">
+        <div className="flex items-center gap-4 mb-4 text-sm flex-wrap">
           <span className="text-muted-foreground">Not Absent</span>
           <div className="w-4 h-4 bg-muted/20 border border-border"></div>
           
           <span className="text-muted-foreground ml-2">Leave</span>
           <div className="w-4 h-4 bg-blue-500 border border-border"></div>
           
-          <span className="text-muted-foreground ml-2">Regularization</span>
+          <span className="text-muted-foreground ml-2">Work From Home</span>
           <div className="w-4 h-4 bg-orange-500 border border-border"></div>
+          
+          <span className="text-muted-foreground ml-2">Business Events / Travel</span>
+          <div className="w-4 h-4 bg-green-500 border border-border"></div>
         </div>
 
         {/* Heatmap Grid */}
