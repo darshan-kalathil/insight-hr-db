@@ -148,7 +148,7 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
                                 {format(new Date(dateStr), 'MMM dd, yyyy')}
                               </p>
                               <p className="text-sm">
-                                {count} {count === 1 ? 'person' : 'people'} on leave
+                                {count} {count === 1 ? 'person' : 'people'} away from office
                               </p>
                               {employees.length > 0 && (
                                 <div className="mt-2 pt-2 border-t border-border">
