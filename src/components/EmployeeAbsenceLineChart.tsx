@@ -151,7 +151,7 @@ export const EmployeeAbsenceLineChart = ({
     },
     'Work From Home': {
       label: 'Work From Home',
-      color: 'hsl(142, 71%, 45%)', // green-500
+      color: 'hsl(25, 95%, 53%)', // orange-500
     },
     'Travel/Business': {
       label: 'Travel/Business',
