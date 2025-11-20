@@ -34,16 +34,17 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
       return 'bg-blue-500';
     }
     
-    // Check specific regularization types
-    if (absenceType === 'Work From Home') {
-      return 'bg-orange-500';
-    }
-    
+    // Check for business travel/events (green) - must come before other regularization checks
     if (absenceType === 'Attending Business Events' || absenceType === 'Travelling For Work') {
       return 'bg-green-500';
     }
     
-    // Default for other regularization types
+    // Check for Work From Home (orange)
+    if (absenceType === 'Work From Home') {
+      return 'bg-orange-500';
+    }
+    
+    // Default for other regularization types (orange)
     if (regularizationTypes.includes(absenceType)) {
       return 'bg-orange-500';
     }
