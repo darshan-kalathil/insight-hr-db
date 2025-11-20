@@ -1,8 +1,39 @@
 import { format, eachMonthOfInterval, startOfMonth } from 'date-fns';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { ChartContainer, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
 import type { EmployeeDailyAbsence } from '@/hooks/useEmployeeAbsenceData';
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (!active || !payload) return null;
+
+  // Filter out zero values
+  const nonZeroPayload = payload.filter(entry => entry.value > 0);
+
+  if (nonZeroPayload.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border bg-background p-2 shadow-md">
+      <p className="text-sm font-medium mb-2">{label}</p>
+      {nonZeroPayload.map((entry, index) => (
+        <div key={index} className="flex items-center gap-2 text-sm">
+          <div
+            className="w-3 h-3 rounded-sm"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span className="text-muted-foreground">{entry.name}</span>
+          <span className="font-medium ml-auto">{entry.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 interface EmployeeAbsenceLineChartProps {
   data: EmployeeDailyAbsence[];
@@ -97,19 +128,54 @@ export const EmployeeAbsenceLineChart = ({
             tick={{ fill: 'hsl(var(--muted-foreground))' }}
             allowDecimals={false}
           />
-          <ChartTooltip content={<ChartTooltipContent />} />
+          <Tooltip content={<CustomTooltip />} />
           <ChartLegend content={<ChartLegendContent />} />
-          {selectedTypes.map((type) => (
-            <Line
-              key={type}
-              type="monotone"
-              dataKey={type}
-              stroke={getColorForType(type)}
-              strokeWidth={2}
-              dot={{ r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-          ))}
+          {selectedTypes.map((type) => {
+            // Check if this type has any non-zero values
+            const hasNonZeroValues = monthlyData.some(month => month[type] > 0);
+            
+            return (
+              <Line
+                key={type}
+                type="monotone"
+                dataKey={type}
+                stroke={getColorForType(type)}
+                strokeWidth={2}
+                dot={(props: any) => {
+                  // Only show dot if value is greater than 0
+                  if (props.payload[type] > 0) {
+                    return (
+                      <circle
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={4}
+                        fill={getColorForType(type)}
+                        stroke="none"
+                      />
+                    );
+                  }
+                  return null;
+                }}
+                activeDot={(props: any) => {
+                  // Only show active dot if value is greater than 0
+                  if (props.payload[type] > 0) {
+                    return (
+                      <circle
+                        cx={props.cx}
+                        cy={props.cy}
+                        r={6}
+                        fill={getColorForType(type)}
+                        stroke="white"
+                        strokeWidth={2}
+                      />
+                    );
+                  }
+                  return null;
+                }}
+                connectNulls={false}
+              />
+            );
+          })}
         </LineChart>
       </ResponsiveContainer>
     </ChartContainer>
