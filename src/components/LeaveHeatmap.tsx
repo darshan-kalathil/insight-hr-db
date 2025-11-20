@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, getDaysInMonth } from 'date-fns';
+import { format, getDaysInMonth, getDay } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface DailyLeaveData {
@@ -32,6 +32,12 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
     if (intensity <= 0.6) return 'bg-primary/60';
     if (intensity <= 0.8) return 'bg-primary/80';
     return 'bg-primary';
+  };
+
+  // Check if a date is a weekend (Saturday = 6, Sunday = 0)
+  const isWeekend = (dateStr: string): boolean => {
+    const day = getDay(new Date(dateStr));
+    return day === 0 || day === 6;
   };
 
   // Generate year range
@@ -103,10 +109,6 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
                     const dateStr = day <= daysInMonth 
                       ? format(new Date(monthInfo.year, monthInfo.month, day), 'yyyy-MM-dd')
                       : null;
-                    
-                    const cellData = dateStr ? dataMap.get(dateStr) : null;
-                    const count = cellData?.count || 0;
-                    const employees = cellData?.employees || [];
 
                     // If day doesn't exist in this month, render empty cell
                     if (!dateStr || day > daysInMonth) {
@@ -117,6 +119,20 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
                         ></div>
                       );
                     }
+
+                    // If weekend, render black cell with no interaction
+                    if (isWeekend(dateStr)) {
+                      return (
+                        <div 
+                          key={`weekend-${monthIdx}-${day}`} 
+                          className="w-7 h-6 bg-black border border-border"
+                        ></div>
+                      );
+                    }
+                    
+                    const cellData = dataMap.get(dateStr);
+                    const count = cellData?.count || 0;
+                    const employees = cellData?.employees || [];
 
                     return (
                       <TooltipProvider key={`${monthIdx}-${day}`}>
