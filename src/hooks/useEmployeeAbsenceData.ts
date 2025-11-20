@@ -7,6 +7,11 @@ export interface EmployeeDailyAbsence {
   absenceType: string | null;
 }
 
+export interface EmployeeAbsenceResult {
+  absenceData: EmployeeDailyAbsence[];
+  allAbsenceDates: Set<string>;
+}
+
 export const useEmployeeAbsenceData = (
   employeeCode: string | null,
   selectedTypes: string[],
@@ -15,39 +20,61 @@ export const useEmployeeAbsenceData = (
 ) => {
   return useQuery({
     queryKey: ['employee-absence-data', employeeCode, selectedTypes, startDate, endDate],
-    queryFn: async () => {
-      if (!employeeCode) return [];
+    queryFn: async (): Promise<EmployeeAbsenceResult> => {
+      if (!employeeCode) return { absenceData: [], allAbsenceDates: new Set() };
 
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
 
-      // Fetch leave records
-      const { data: leaveData, error: leaveError } = await supabase
+      // Fetch ALL leave records (unfiltered) to determine which dates have any absence
+      const { data: allLeaveData, error: allLeaveError } = await supabase
         .from('leave_records')
-        .select('from_date, to_date, leave_type, approval_status')
+        .select('from_date, to_date, leave_type')
         .eq('employee_code', employeeCode)
         .not('approval_status', 'in', '("Rejected","Cancelled")')
         .gte('to_date', startDateStr)
         .lte('from_date', endDateStr);
 
-      if (leaveError) throw leaveError;
+      if (allLeaveError) throw allLeaveError;
 
-      // Fetch regularization records
-      const { data: regData, error: regError } = await supabase
+      // Fetch ALL regularization records (unfiltered)
+      const { data: allRegData, error: allRegError } = await supabase
         .from('attendance_regularization')
-        .select('attendance_day, reason, approval_status')
+        .select('attendance_day, reason')
         .eq('employee_code', employeeCode)
         .not('approval_status', 'in', '("Cancelled")')
         .gte('attendance_day', startDateStr)
         .lte('attendance_day', endDateStr);
 
-      if (regError) throw regError;
+      if (allRegError) throw allRegError;
 
-      // Create a map to store absence data by date
+      // Create a Set of ALL dates that have any absence record (for red dot logic)
+      const allAbsenceDates = new Set<string>();
+
+      // Add all leave dates
+      allLeaveData?.forEach((leave) => {
+        const leaveDays = eachDayOfInterval({
+          start: new Date(leave.from_date),
+          end: new Date(leave.to_date),
+        });
+        leaveDays.forEach((day) => {
+          const dateStr = format(day, 'yyyy-MM-dd');
+          if (dateStr >= startDateStr && dateStr <= endDateStr) {
+            allAbsenceDates.add(dateStr);
+          }
+        });
+      });
+
+      // Add all regularization dates
+      allRegData?.forEach((reg) => {
+        allAbsenceDates.add(reg.attendance_day);
+      });
+
+      // Create a map to store FILTERED absence data by date (for display)
       const absenceMap = new Map<string, string>();
 
-      // Process leave records (expand multi-day leaves)
-      leaveData?.forEach((leave) => {
+      // Process leave records for selected types only
+      allLeaveData?.forEach((leave) => {
         if (selectedTypes.includes(leave.leave_type)) {
           const leaveDays = eachDayOfInterval({
             start: new Date(leave.from_date),
@@ -63,21 +90,21 @@ export const useEmployeeAbsenceData = (
         }
       });
 
-      // Process regularization records (only if leave doesn't exist for that date)
-      regData?.forEach((reg) => {
+      // Process regularization records for selected types only
+      allRegData?.forEach((reg) => {
         const reason = reg.reason || 'Regularization';
         if (selectedTypes.includes(reason) && !absenceMap.has(reg.attendance_day)) {
           absenceMap.set(reg.attendance_day, reason);
         }
       });
 
-      // Convert map to array format for heatmap
-      const result: EmployeeDailyAbsence[] = [];
+      // Convert map to array format for heatmap display
+      const absenceData: EmployeeDailyAbsence[] = [];
       absenceMap.forEach((absenceType, date) => {
-        result.push({ date, absenceType });
+        absenceData.push({ date, absenceType });
       });
 
-      return result;
+      return { absenceData, allAbsenceDates };
     },
     enabled: !!employeeCode && selectedTypes.length > 0,
   });
