@@ -1,4 +1,4 @@
-import { format, getDaysInMonth, getDay } from 'date-fns';
+import { format, getDaysInMonth } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EmployeeDailyAbsence } from '@/hooks/useEmployeeAbsenceData';
 import { useEmployeeLeaveCoverage } from '@/hooks/useEmployeeLeaveCoverage';
@@ -52,12 +52,6 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
     return 'bg-muted/20';
   };
 
-  // Check if a date is a weekend (Saturday = 6, Sunday = 0)
-  const isWeekend = (dateStr: string): boolean => {
-    const day = getDay(new Date(dateStr));
-    return day === 0 || day === 6;
-  };
-
   // Check if status represents an absence
   const isAbsentStatus = (status: string): boolean => {
     return status === 'Absent' || status === 'Unapproved Absence';
@@ -89,7 +83,7 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
       <div className="min-w-max">
         {/* Legend */}
         <div className="flex items-center gap-4 mb-4 text-sm flex-wrap">
-          <span className="text-muted-foreground">Not Absent</span>
+          <span className="text-muted-foreground">Present</span>
           <div className="w-4 h-4 bg-muted/20 border border-border"></div>
           
           <span className="text-muted-foreground ml-2">Leave</span>
@@ -143,16 +137,6 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
                         <div 
                           key={`empty-${monthIdx}-${day}`} 
                           className="w-7 h-6"
-                        ></div>
-                      );
-                    }
-
-                    // If weekend, render black cell with no interaction
-                    if (isWeekend(dateStr)) {
-                      return (
-                        <div 
-                          key={`weekend-${monthIdx}-${day}`} 
-                          className="w-7 h-6 bg-black border border-border"
                         ></div>
                       );
                     }
