@@ -1,18 +1,30 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmployeeDailyAbsence } from '@/hooks/useEmployeeAbsenceData';
+import { useEmployeeLeaveCoverage } from '@/hooks/useEmployeeLeaveCoverage';
 
 interface EmployeeAbsenceSummaryProps {
   data: EmployeeDailyAbsence[];
   leaveTypes: string[];
   regularizationTypes: string[];
+  attendanceData: { date: string; status: string }[];
+  employeeCode: string | null;
+  startDate: Date;
+  endDate: Date;
 }
 
 export const EmployeeAbsenceSummary = ({ 
   data, 
   leaveTypes, 
-  regularizationTypes 
+  regularizationTypes,
+  attendanceData,
+  employeeCode,
+  startDate,
+  endDate
 }: EmployeeAbsenceSummaryProps) => {
+  // Fetch coverage data (all leaves/regularizations regardless of filter)
+  const { data: coverageSet } = useEmployeeLeaveCoverage(employeeCode, startDate, endDate);
+
   // Count occurrences of each type
   const leaveCounts = new Map<string, number>();
   const regularizationCounts = new Map<string, number>();
@@ -26,6 +38,16 @@ export const EmployeeAbsenceSummary = ({
       }
     }
   });
+
+  // Calculate unapproved absences (red boxes)
+  const isAbsentStatus = (status: string): boolean => {
+    return status === 'Absent' || status === 'Unapproved Absence';
+  };
+
+  const unapprovedAbsencesCount = attendanceData.filter(({ date, status }) => {
+    const hasCoverage = coverageSet?.has(date);
+    return !hasCoverage && isAbsentStatus(status);
+  }).length;
 
   // Convert to sorted arrays
   const leaveEntries = Array.from(leaveCounts.entries()).sort((a, b) => a[0].localeCompare(b[0]));
@@ -111,6 +133,17 @@ export const EmployeeAbsenceSummary = ({
               </TableBody>
             </Table>
           </div>
+        </div>
+
+        {/* Unapproved Absences */}
+        <div className="mt-4 pt-4 border-t">
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-semibold">Unapproved Absences</span>
+            <span className="text-2xl font-bold text-red-500">{unapprovedAbsencesCount}</span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Days marked absent without leave or regularization coverage
+          </p>
         </div>
       </CardContent>
     </Card>

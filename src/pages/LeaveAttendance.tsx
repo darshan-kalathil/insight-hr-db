@@ -289,6 +289,10 @@ const LeaveAttendance = () => {
                       data={employeeData}
                       leaveTypes={absenceTypes?.leaveTypes || []}
                       regularizationTypes={absenceTypes?.regularizationTypes || []}
+                      attendanceData={employeeAttendanceData || []}
+                      employeeCode={selectedEmployee}
+                      startDate={employeeDateRange?.from || financialYear.startDate}
+                      endDate={employeeDateRange?.to || financialYear.endDate}
                     />
                     <EmployeeLeaveHeatmap
                       data={employeeData}
