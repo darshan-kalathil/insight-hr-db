@@ -209,7 +209,6 @@ export const OrgAbsenceLineChart = ({
             strokeWidth={2}
             dot={{ r: 4 }}
             activeDot={{ r: 6 }}
-            strokeDasharray="5 5"
           />
         </LineChart>
       </ResponsiveContainer>
