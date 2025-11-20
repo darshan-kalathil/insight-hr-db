@@ -30,6 +30,7 @@ export const useOrgAbsenceData = ({ selectedTypes, startDate, endDate }: OrgAbse
         .from('leave_records')
         .select('employee_code, from_date, to_date, leave_type')
         .in('leave_type', selectedTypes)
+        .not('approval_status', 'in', '("Rejected","Cancelled")')
         .lte('from_date', endDateStr)
         .gte('to_date', startDateStr);
 
@@ -40,7 +41,7 @@ export const useOrgAbsenceData = ({ selectedTypes, startDate, endDate }: OrgAbse
         .from('attendance_regularization')
         .select('employee_code, attendance_day, reason')
         .in('reason', selectedTypes)
-        .not('approval_status', 'in', '("Rejected by System","Cancelled")')
+        .not('approval_status', 'in', '("Cancelled")')
         .gte('attendance_day', startDateStr)
         .lte('attendance_day', endDateStr);
 
