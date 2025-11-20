@@ -15,6 +15,7 @@ import { OrgAbsenceLineChart } from '@/components/OrgAbsenceLineChart';
 import { EmployeeSelect } from '@/components/EmployeeSelect';
 import { EmployeeLeaveHeatmap } from '@/components/EmployeeLeaveHeatmap';
 import { EmployeeAbsenceLineChart } from '@/components/EmployeeAbsenceLineChart';
+import { EmployeeAbsenceSummary } from '@/components/EmployeeAbsenceSummary';
 import { getCurrentFinancialYear } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
@@ -283,15 +284,22 @@ const LeaveAttendance = () => {
                     Please select at least one absence type to view the heatmap
                   </div>
                 ) : employeeData ? (
-                  <EmployeeLeaveHeatmap
-                    data={employeeData}
-                    attendanceData={employeeAttendanceData || []}
-                    startDate={employeeDateRange?.from || financialYear.startDate}
-                    endDate={employeeDateRange?.to || financialYear.endDate}
-                    leaveTypes={absenceTypes?.leaveTypes || []}
-                    regularizationTypes={absenceTypes?.regularizationTypes || []}
-                    employeeCode={selectedEmployee}
-                  />
+                  <>
+                    <EmployeeAbsenceSummary
+                      data={employeeData}
+                      leaveTypes={absenceTypes?.leaveTypes || []}
+                      regularizationTypes={absenceTypes?.regularizationTypes || []}
+                    />
+                    <EmployeeLeaveHeatmap
+                      data={employeeData}
+                      attendanceData={employeeAttendanceData || []}
+                      startDate={employeeDateRange?.from || financialYear.startDate}
+                      endDate={employeeDateRange?.to || financialYear.endDate}
+                      leaveTypes={absenceTypes?.leaveTypes || []}
+                      regularizationTypes={absenceTypes?.regularizationTypes || []}
+                      employeeCode={selectedEmployee}
+                    />
+                  </>
                 ) : (
                   <div className="flex items-center justify-center py-12 text-muted-foreground">
                     No data available for selected filters
