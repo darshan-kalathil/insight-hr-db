@@ -291,7 +291,6 @@ const LeaveAttendance = () => {
                     leaveTypes={absenceTypes?.leaveTypes || []}
                     regularizationTypes={absenceTypes?.regularizationTypes || []}
                     employeeCode={selectedEmployee}
-                    employeeLocation={employees?.find(e => e.empl_no === selectedEmployee)?.location || null}
                   />
                 ) : (
                   <div className="flex items-center justify-center py-12 text-muted-foreground">

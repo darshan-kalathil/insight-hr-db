@@ -11,12 +11,11 @@ interface EmployeeLeaveHeatmapProps {
   leaveTypes: string[];
   regularizationTypes: string[];
   employeeCode: string | null;
-  employeeLocation: string | null;
 }
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate, leaveTypes, regularizationTypes, employeeCode, employeeLocation }: EmployeeLeaveHeatmapProps) => {
+export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate, leaveTypes, regularizationTypes, employeeCode }: EmployeeLeaveHeatmapProps) => {
   // Fetch coverage data (all leaves/regularizations regardless of filter)
   const { data: coverageSet } = useEmployeeLeaveCoverage(employeeCode, startDate, endDate);
   
@@ -25,9 +24,6 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
   
   // Create attendance map for quick lookup
   const attendanceMap = new Map(attendanceData.map(d => [d.date, d.status]));
-
-  // Only show red boxes for Delhi employees (they have biometric attendance)
-  const isDelhiEmployee = employeeLocation === 'Delhi';
 
   // Get color for absence based on type
   const getColorForAbsence = (absenceType: string | null) => {
@@ -163,8 +159,7 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
                     const absenceType = dataMap.get(dateStr);
                     const attendanceStatus = attendanceMap.get(dateStr);
                     const hasCoverage = coverageSet?.has(dateStr);
-                    // Only show red box for Delhi employees with no coverage and absent status
-                    const showRedBox = isDelhiEmployee && !hasCoverage && attendanceStatus && isAbsentStatus(attendanceStatus);
+                    const showRedBox = !hasCoverage && attendanceStatus && isAbsentStatus(attendanceStatus);
 
                     return (
                       <TooltipProvider key={`${monthIdx}-${day}`}>
