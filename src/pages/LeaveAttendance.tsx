@@ -242,6 +242,8 @@ const LeaveAttendance = () => {
                     data={employeeData}
                     startDate={employeeDateRange?.from || financialYear.startDate}
                     endDate={employeeDateRange?.to || financialYear.endDate}
+                    leaveTypes={absenceTypes?.leaveTypes || []}
+                    regularizationTypes={absenceTypes?.regularizationTypes || []}
                   />
                 ) : (
                   <div className="flex items-center justify-center py-12 text-muted-foreground">

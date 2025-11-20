@@ -6,17 +6,28 @@ interface EmployeeLeaveHeatmapProps {
   data: EmployeeDailyAbsence[];
   startDate: Date;
   endDate: Date;
+  leaveTypes: string[];
+  regularizationTypes: string[];
 }
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-export const EmployeeLeaveHeatmap = ({ data, startDate, endDate }: EmployeeLeaveHeatmapProps) => {
+export const EmployeeLeaveHeatmap = ({ data, startDate, endDate, leaveTypes, regularizationTypes }: EmployeeLeaveHeatmapProps) => {
   // Create a map for quick lookup
   const dataMap = new Map(data.map(d => [d.date, d.absenceType]));
 
-  // Get color for absence (single color since it's one employee)
-  const getColorForAbsence = (hasAbsence: boolean) => {
-    return hasAbsence ? 'bg-primary' : 'bg-muted/20';
+  // Get color for absence based on type
+  const getColorForAbsence = (absenceType: string | null) => {
+    if (!absenceType) return 'bg-muted/20';
+    
+    // Check if it's a leave type (blue) or regularization type (orange)
+    if (leaveTypes.includes(absenceType)) {
+      return 'bg-blue-500';
+    } else if (regularizationTypes.includes(absenceType)) {
+      return 'bg-orange-500';
+    }
+    
+    return 'bg-muted/20';
   };
 
   // Check if a date is a weekend (Saturday = 6, Sunday = 0)
@@ -50,13 +61,15 @@ export const EmployeeLeaveHeatmap = ({ data, startDate, endDate }: EmployeeLeave
     <div className="w-full overflow-x-auto">
       <div className="min-w-max">
         {/* Legend */}
-        <div className="flex items-center gap-2 mb-4 text-sm">
+        <div className="flex items-center gap-4 mb-4 text-sm">
           <span className="text-muted-foreground">Not Absent</span>
-          <div className="flex gap-1">
-            <div className="w-4 h-4 bg-muted/20 border border-border"></div>
-            <div className="w-4 h-4 bg-primary border border-border"></div>
-          </div>
-          <span className="text-muted-foreground">Absent</span>
+          <div className="w-4 h-4 bg-muted/20 border border-border"></div>
+          
+          <span className="text-muted-foreground ml-2">Leave</span>
+          <div className="w-4 h-4 bg-blue-500 border border-border"></div>
+          
+          <span className="text-muted-foreground ml-2">Regularization</span>
+          <div className="w-4 h-4 bg-orange-500 border border-border"></div>
         </div>
 
         {/* Heatmap Grid */}
@@ -112,14 +125,13 @@ export const EmployeeLeaveHeatmap = ({ data, startDate, endDate }: EmployeeLeave
                     }
                     
                     const absenceType = dataMap.get(dateStr);
-                    const hasAbsence = !!absenceType;
 
                     return (
                       <TooltipProvider key={`${monthIdx}-${day}`}>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div
-                              className={`w-7 h-6 border border-border cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:scale-110 ${getColorForAbsence(hasAbsence)}`}
+                              className={`w-7 h-6 border border-border cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:scale-110 ${getColorForAbsence(absenceType)}`}
                             ></div>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
@@ -127,7 +139,7 @@ export const EmployeeLeaveHeatmap = ({ data, startDate, endDate }: EmployeeLeave
                               <p className="font-semibold">
                                 {format(new Date(dateStr), 'MMM dd, yyyy')}
                               </p>
-                              {hasAbsence ? (
+                              {absenceType ? (
                                 <p className="text-sm">
                                   Absent: {absenceType}
                                 </p>
