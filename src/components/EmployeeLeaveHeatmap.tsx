@@ -101,11 +101,7 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
           <div className="w-4 h-4 bg-green-500 border border-border"></div>
           
           <span className="text-muted-foreground ml-2">Absent (No Leave/Regularization)</span>
-          <div className="w-4 h-4 bg-muted/20 border border-border relative">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            </div>
-          </div>
+          <div className="w-4 h-4 bg-red-500 border border-border"></div>
         </div>
 
         {/* Heatmap Grid */}
@@ -163,7 +159,7 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
                     const absenceType = dataMap.get(dateStr);
                     const attendanceStatus = attendanceMap.get(dateStr);
                     const hasCoverage = coverageSet?.has(dateStr);
-                    const showRedDot = !hasCoverage && attendanceStatus && isAbsentStatus(attendanceStatus);
+                    const showRedBox = !hasCoverage && attendanceStatus && isAbsentStatus(attendanceStatus);
 
                     return (
                       <TooltipProvider key={`${monthIdx}-${day}`}>
@@ -171,13 +167,8 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
                           <TooltipTrigger asChild>
                             <div className="relative">
                               <div
-                                className={`w-7 h-6 border border-border cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:scale-110 ${getColorForAbsence(absenceType)}`}
+                                className={`w-7 h-6 border border-border cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:scale-110 ${showRedBox ? 'bg-red-500' : getColorForAbsence(absenceType)}`}
                               >
-                                {showRedDot && (
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                  </div>
-                                )}
                               </div>
                             </div>
                           </TooltipTrigger>
@@ -190,7 +181,7 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
                                 <p className="text-sm">
                                   Absent: {absenceType}
                                 </p>
-                              ) : showRedDot ? (
+                              ) : showRedBox ? (
                                 <p className="text-sm text-red-500">Attendance: {attendanceStatus}</p>
                               ) : (
                                 <p className="text-sm">Present</p>
