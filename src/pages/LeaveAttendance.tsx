@@ -50,10 +50,13 @@ const LeaveAttendance = () => {
     }
   }, [absenceTypes]);
 
-  // Set default selection to all leave types for Employee tab
+  // Set default selection to all leave types + all regularization types for Employee tab
   useEffect(() => {
-    if (absenceTypes?.leaveTypes && absenceTypes.leaveTypes.length > 0 && employeeSelectedTypes.length === 0) {
-      setEmployeeSelectedTypes(absenceTypes.leaveTypes);
+    if (absenceTypes && employeeSelectedTypes.length === 0) {
+      const allTypes = [...(absenceTypes.leaveTypes || []), ...(absenceTypes.regularizationTypes || [])];
+      if (allTypes.length > 0) {
+        setEmployeeSelectedTypes(allTypes);
+      }
     }
   }, [absenceTypes]);
 
