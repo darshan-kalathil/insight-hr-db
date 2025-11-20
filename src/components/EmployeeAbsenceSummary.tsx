@@ -31,6 +31,10 @@ export const EmployeeAbsenceSummary = ({
   const leaveEntries = Array.from(leaveCounts.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   const regularizationEntries = Array.from(regularizationCounts.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
+  // Calculate totals
+  const totalLeaves = leaveEntries.reduce((sum, [, count]) => sum + count, 0);
+  const totalRegularizations = regularizationEntries.reduce((sum, [, count]) => sum + count, 0);
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -63,6 +67,12 @@ export const EmployeeAbsenceSummary = ({
                     </TableCell>
                   </TableRow>
                 )}
+                {leaveEntries.length > 0 && (
+                  <TableRow className="border-t-2 font-semibold bg-muted/50">
+                    <TableCell>Total</TableCell>
+                    <TableCell className="text-right">{totalLeaves}</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
@@ -90,6 +100,12 @@ export const EmployeeAbsenceSummary = ({
                     <TableCell colSpan={2} className="text-center text-muted-foreground">
                       No regularizations recorded
                     </TableCell>
+                  </TableRow>
+                )}
+                {regularizationEntries.length > 0 && (
+                  <TableRow className="border-t-2 font-semibold bg-muted/50">
+                    <TableCell>Total</TableCell>
+                    <TableCell className="text-right">{totalRegularizations}</TableCell>
                   </TableRow>
                 )}
               </TableBody>
