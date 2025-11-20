@@ -134,7 +134,7 @@ export const EmployeeAbsenceLineChart = ({
         monthlyBreakdown[monthKey][breakdownKey] = (monthlyBreakdown[monthKey][breakdownKey] || 0) + 1;
       } else if (absence.absenceType === 'Work From Home') {
         monthData['Work From Home'] = (monthData['Work From Home'] || 0) + 1;
-      } else if (absence.absenceType === 'Attending Business Events' || absence.absenceType === 'Travelling For Work') {
+      } else if (absence.absenceType === 'Attending Business Events' || absence.absenceType === 'Travelling for Work') {
         monthData['Travel/Business'] = (monthData['Travel/Business'] || 0) + 1;
         // Store breakdown
         const breakdownKey = `travel_${absence.absenceType}`;
