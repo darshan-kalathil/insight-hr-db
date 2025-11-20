@@ -74,12 +74,15 @@ const LeaveAttendance = () => {
   });
 
   // Fetch employee absence data
-  const { data: employeeData, isLoading: isLoadingEmployeeData, error: employeeDataError } = useEmployeeAbsenceData(
+  const { data: employeeAbsenceResult, isLoading: isLoadingEmployeeData, error: employeeDataError } = useEmployeeAbsenceData(
     selectedEmployee,
     employeeSelectedTypes,
     employeeDateRange?.from || financialYear.startDate,
     employeeDateRange?.to || financialYear.endDate
   );
+
+  const employeeAbsenceData = employeeAbsenceResult?.absenceData || [];
+  const employeeAllAbsenceDates = employeeAbsenceResult?.allAbsenceDates || new Set();
 
   // Fetch employee attendance data
   const { data: employeeAttendanceData, isLoading: isLoadingAttendance } = useEmployeeAttendanceData(
@@ -281,10 +284,12 @@ const LeaveAttendance = () => {
                   <div className="flex items-center justify-center py-12 text-muted-foreground">
                     Please select at least one absence type to view the heatmap
                   </div>
-                ) : employeeData ? (
+                ) : employeeAbsenceData.length > 0 ? (
                   <EmployeeLeaveHeatmap
-                    data={employeeData}
+                    data={employeeAbsenceData}
                     attendanceData={employeeAttendanceData || []}
+                    allAbsenceDates={employeeAllAbsenceDates}
+                    selectedTypes={employeeSelectedTypes}
                     startDate={employeeDateRange?.from || financialYear.startDate}
                     endDate={employeeDateRange?.to || financialYear.endDate}
                     leaveTypes={absenceTypes?.leaveTypes || []}
@@ -319,9 +324,9 @@ const LeaveAttendance = () => {
                   <div className="flex items-center justify-center py-12 text-muted-foreground">
                     Please select at least one absence type to view trends
                   </div>
-                ) : employeeData ? (
+                ) : employeeAbsenceData.length > 0 ? (
                   <EmployeeAbsenceLineChart
-                    data={employeeData}
+                    data={employeeAbsenceData}
                     selectedTypes={employeeSelectedTypes}
                     leaveTypes={absenceTypes?.leaveTypes || []}
                     regularizationTypes={absenceTypes?.regularizationTypes || []}

@@ -5,6 +5,8 @@ import { EmployeeDailyAbsence } from '@/hooks/useEmployeeAbsenceData';
 interface EmployeeLeaveHeatmapProps {
   data: EmployeeDailyAbsence[];
   attendanceData: { date: string; status: string }[];
+  allAbsenceDates: Set<string>;
+  selectedTypes: string[];
   startDate: Date;
   endDate: Date;
   leaveTypes: string[];
@@ -13,9 +15,9 @@ interface EmployeeLeaveHeatmapProps {
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate, leaveTypes, regularizationTypes }: EmployeeLeaveHeatmapProps) => {
+export const EmployeeLeaveHeatmap = ({ data, attendanceData, allAbsenceDates, selectedTypes, startDate, endDate, leaveTypes, regularizationTypes }: EmployeeLeaveHeatmapProps) => {
   // Create a map for quick lookup
-  const dataMap = new Map(data.map(d => [d.date, d.absenceType]));
+  const absenceMap = new Map(data.map(d => [d.date, d.absenceType]));
   
   // Create attendance map for quick lookup
   const attendanceMap = new Map(attendanceData.map(d => [d.date, d.status]));
