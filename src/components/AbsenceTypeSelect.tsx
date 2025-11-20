@@ -40,13 +40,25 @@ export const AbsenceTypeSelect = ({
   };
 
   const selectAllLeaves = () => {
-    const allLeaves = [...new Set([...selectedTypes, ...leaveTypes])];
-    onSelectedTypesChange(allLeaves);
+    if (areAllLeavesSelected) {
+      // Deselect all leaves
+      onSelectedTypesChange(selectedTypes.filter(t => !leaveTypes.includes(t)));
+    } else {
+      // Select all leaves
+      const allLeaves = [...new Set([...selectedTypes, ...leaveTypes])];
+      onSelectedTypesChange(allLeaves);
+    }
   };
 
   const selectAllRegularizations = () => {
-    const allRegularizations = [...new Set([...selectedTypes, ...regularizationTypes])];
-    onSelectedTypesChange(allRegularizations);
+    if (areAllRegularizationsSelected) {
+      // Deselect all regularizations
+      onSelectedTypesChange(selectedTypes.filter(t => !regularizationTypes.includes(t)));
+    } else {
+      // Select all regularizations
+      const allRegularizations = [...new Set([...selectedTypes, ...regularizationTypes])];
+      onSelectedTypesChange(allRegularizations);
+    }
   };
 
   const areAllLeavesSelected = leaveTypes.every(type => selectedTypes.includes(type));
