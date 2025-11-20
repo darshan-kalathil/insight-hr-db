@@ -40,17 +40,19 @@ const LeaveAttendance = () => {
   // Fetch active employees
   const { data: employees, isLoading: isLoadingEmployees, error: employeesError } = useActiveEmployees();
 
-  // Set default selection to first leave type for Org tab
+  // Set default selection to Earned Leave (or first available) for Org tab
   useEffect(() => {
     if (absenceTypes?.leaveTypes && absenceTypes.leaveTypes.length > 0 && selectedTypes.length === 0) {
-      setSelectedTypes([absenceTypes.leaveTypes[0]]);
+      const earnedLeave = absenceTypes.leaveTypes.find(type => type === 'Earned Leave');
+      setSelectedTypes([earnedLeave || absenceTypes.leaveTypes[0]]);
     }
   }, [absenceTypes]);
 
-  // Set default selection to first leave type for Employee tab
+  // Set default selection to Earned Leave (or first available) for Employee tab
   useEffect(() => {
     if (absenceTypes?.leaveTypes && absenceTypes.leaveTypes.length > 0 && employeeSelectedTypes.length === 0) {
-      setEmployeeSelectedTypes([absenceTypes.leaveTypes[0]]);
+      const earnedLeave = absenceTypes.leaveTypes.find(type => type === 'Earned Leave');
+      setEmployeeSelectedTypes([earnedLeave || absenceTypes.leaveTypes[0]]);
     }
   }, [absenceTypes]);
 
