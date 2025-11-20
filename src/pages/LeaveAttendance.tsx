@@ -1,6 +1,55 @@
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAbsenceTypes } from '@/hooks/useAbsenceTypes';
+import { useOrgAbsenceData } from '@/hooks/useOrgAbsenceData';
+import { AbsenceTypeSelect } from '@/components/AbsenceTypeSelect';
+import { DateRangePicker } from '@/components/DateRangePicker';
+import { LeaveHeatmap } from '@/components/LeaveHeatmap';
+import { getCurrentFinancialYear } from '@/lib/utils';
+import { DateRange } from 'react-day-picker';
+import { toast } from 'sonner';
 
 const LeaveAttendance = () => {
+  const financialYear = getCurrentFinancialYear();
+  
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: financialYear.startDate,
+    to: financialYear.endDate,
+  });
+
+  // Fetch absence types
+  const { data: absenceTypes, isLoading: isLoadingTypes, error: typesError } = useAbsenceTypes();
+
+  // Set default selection to first leave type
+  useEffect(() => {
+    if (absenceTypes?.leaveTypes && absenceTypes.leaveTypes.length > 0 && selectedTypes.length === 0) {
+      setSelectedTypes([absenceTypes.leaveTypes[0]]);
+    }
+  }, [absenceTypes]);
+
+  // Fetch org absence data
+  const { data: orgData, isLoading: isLoadingData, error: dataError } = useOrgAbsenceData({
+    selectedTypes,
+    startDate: dateRange?.from || financialYear.startDate,
+    endDate: dateRange?.to || financialYear.endDate,
+  });
+
+  // Handle errors
+  useEffect(() => {
+    if (typesError) {
+      toast.error('Failed to load absence types');
+      console.error(typesError);
+    }
+    if (dataError) {
+      toast.error('Failed to load absence data');
+      console.error(dataError);
+    }
+  }, [typesError, dataError]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -11,9 +60,86 @@ const LeaveAttendance = () => {
           </p>
         </div>
 
-        <div className="text-muted-foreground">
-          <p>Leave and attendance management features coming soon.</p>
-        </div>
+        <Tabs defaultValue="org" className="w-full">
+          <TabsList>
+            <TabsTrigger value="org">Org</TabsTrigger>
+            <TabsTrigger value="employee">Employee</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="org" className="space-y-4">
+            {/* Filters Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Filters</CardTitle>
+                <CardDescription>
+                  Select absence types and date range to view organizational absence patterns
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-4">
+                {isLoadingTypes ? (
+                  <>
+                    <Skeleton className="h-10 w-[280px]" />
+                    <Skeleton className="h-10 w-[280px]" />
+                  </>
+                ) : absenceTypes ? (
+                  <>
+                    <AbsenceTypeSelect
+                      leaveTypes={absenceTypes.leaveTypes}
+                      regularizationTypes={absenceTypes.regularizationTypes}
+                      selectedTypes={selectedTypes}
+                      onSelectedTypesChange={setSelectedTypes}
+                    />
+                    <DateRangePicker
+                      dateRange={dateRange}
+                      onDateRangeChange={setDateRange}
+                    />
+                  </>
+                ) : null}
+              </CardContent>
+            </Card>
+
+            {/* Heatmap Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Absence Heatmap</CardTitle>
+                <CardDescription>
+                  Daily view of employee absences across the organization
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingData ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Skeleton className="h-[400px] w-full" />
+                  </div>
+                ) : selectedTypes.length === 0 ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    Please select at least one absence type to view the heatmap
+                  </div>
+                ) : orgData && orgData.length > 0 ? (
+                  <LeaveHeatmap
+                    data={orgData}
+                    startDate={dateRange?.from || financialYear.startDate}
+                    endDate={dateRange?.to || financialYear.endDate}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    No data available for selected filters
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="employee">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center text-muted-foreground py-12">
+                  Employee-level attendance features coming soon
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
