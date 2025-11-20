@@ -289,6 +289,7 @@ const LeaveAttendance = () => {
                     endDate={employeeDateRange?.to || financialYear.endDate}
                     leaveTypes={absenceTypes?.leaveTypes || []}
                     regularizationTypes={absenceTypes?.regularizationTypes || []}
+                    employeeCode={selectedEmployee}
                   />
                 ) : (
                   <div className="flex items-center justify-center py-12 text-muted-foreground">

@@ -1,6 +1,7 @@
 import { format, getDaysInMonth, getDay } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EmployeeDailyAbsence } from '@/hooks/useEmployeeAbsenceData';
+import { useEmployeeLeaveCoverage } from '@/hooks/useEmployeeLeaveCoverage';
 
 interface EmployeeLeaveHeatmapProps {
   data: EmployeeDailyAbsence[];
@@ -9,11 +10,15 @@ interface EmployeeLeaveHeatmapProps {
   endDate: Date;
   leaveTypes: string[];
   regularizationTypes: string[];
+  employeeCode: string | null;
 }
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate, leaveTypes, regularizationTypes }: EmployeeLeaveHeatmapProps) => {
+export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate, leaveTypes, regularizationTypes, employeeCode }: EmployeeLeaveHeatmapProps) => {
+  // Fetch coverage data (all leaves/regularizations regardless of filter)
+  const { data: coverageSet } = useEmployeeLeaveCoverage(employeeCode, startDate, endDate);
+  
   // Create a map for quick lookup
   const dataMap = new Map(data.map(d => [d.date, d.absenceType]));
   
@@ -157,7 +162,8 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
                     
                     const absenceType = dataMap.get(dateStr);
                     const attendanceStatus = attendanceMap.get(dateStr);
-                    const showRedDot = !absenceType && attendanceStatus && isAbsentStatus(attendanceStatus);
+                    const hasCoverage = coverageSet?.has(dateStr);
+                    const showRedDot = !hasCoverage && attendanceStatus && isAbsentStatus(attendanceStatus);
 
                     return (
                       <TooltipProvider key={`${monthIdx}-${day}`}>
