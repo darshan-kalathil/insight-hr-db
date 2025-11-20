@@ -284,36 +284,41 @@ export const AttendanceUpload = ({ onImportComplete }: AttendanceUploadProps) =>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Input
+        <div>
+          <input
             type="file"
             accept=".xlsx,.xls"
             onChange={handleFileUpload}
             disabled={importing}
-            className="max-w-md"
+            className="hidden"
+            id="attendance-upload"
           />
-          <Button disabled={importing} variant="outline">
-            <Upload className="mr-2 h-4 w-4" />
-            {importing ? 'Importing...' : 'Select File'}
-          </Button>
+          <label htmlFor="attendance-upload">
+            <Button asChild disabled={importing}>
+              <span className="cursor-pointer">
+                <Upload className="mr-2 h-4 w-4" />
+                {importing ? 'Importing...' : 'Select Excel File'}
+              </span>
+            </Button>
+          </label>
         </div>
 
         {result && (
-          <div className="space-y-2 p-4 bg-muted rounded-lg">
+          <div className="space-y-2 p-3 bg-muted rounded-md text-sm">
             <h3 className="font-semibold">Import Results</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>Total rows processed:</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>Total rows:</div>
               <div className="font-medium">{result.total}</div>
-              <div>Records processed:</div>
+              <div>Processed:</div>
               <div className="font-medium text-green-600">{result.inserted}</div>
-              <div>Records skipped:</div>
+              <div>Skipped:</div>
               <div className="font-medium text-yellow-600">{result.skipped}</div>
             </div>
 
             {result.errors.length > 0 && (
-              <div className="mt-4 space-y-1">
-                <h4 className="font-semibold text-sm text-destructive">Errors:</h4>
-                <div className="max-h-40 overflow-y-auto space-y-1">
+              <div className="mt-2 space-y-1">
+                <h4 className="font-semibold text-xs text-destructive">Errors:</h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
                   {result.errors.map((error, index) => (
                     <div key={index} className="text-xs text-muted-foreground">
                       {error}

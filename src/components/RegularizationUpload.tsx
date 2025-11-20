@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Upload } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 type ImportResult = {
@@ -226,41 +227,54 @@ export const RegularizationUpload = ({ onImportComplete }: RegularizationUploadP
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Input
+          <div>
+            <input
               type="file"
               accept=".xlsx,.xls"
               onChange={handleFileUpload}
               disabled={importing}
-              className="flex-1"
+              className="hidden"
+              id="regularization-upload"
             />
-            <Button disabled={importing}>
-              {importing ? 'Importing...' : 'Import'}
-            </Button>
+            <label htmlFor="regularization-upload">
+              <Button asChild disabled={importing}>
+                <span className="cursor-pointer">
+                  <Upload className="mr-2 h-4 w-4" />
+                  {importing ? 'Importing...' : 'Select Excel File'}
+                </span>
+              </Button>
+            </label>
           </div>
 
           {result && (
-            <div className="space-y-2 text-sm">
-              <p className="font-semibold">Import Results:</p>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li>Total rows: {result.total}</li>
-                <li>Processed: {result.inserted}</li>
-                <li>Skipped (rejected): {result.skipped}</li>
-                <li>Duplicates removed: {result.duplicates}</li>
-                {result.errors.length > 0 && (
-                  <li className="text-destructive">
-                    Errors: {result.errors.length}
-                    <ul className="list-disc list-inside ml-4 mt-1">
-                      {result.errors.slice(0, 5).map((error, idx) => (
-                        <li key={idx}>{error}</li>
-                      ))}
-                      {result.errors.length > 5 && (
-                        <li>...and {result.errors.length - 5} more</li>
-                      )}
-                    </ul>
-                  </li>
-                )}
-              </ul>
+            <div className="space-y-2 p-3 bg-muted rounded-md text-sm">
+              <h3 className="font-semibold">Import Results</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <div>Total rows:</div>
+                <div className="font-medium">{result.total}</div>
+                <div>Processed:</div>
+                <div className="font-medium text-green-600">{result.inserted}</div>
+                <div>Skipped:</div>
+                <div className="font-medium text-yellow-600">{result.skipped}</div>
+                <div>Duplicates removed:</div>
+                <div className="font-medium text-blue-600">{result.duplicates}</div>
+              </div>
+              
+              {result.errors.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <h4 className="font-semibold text-xs text-destructive">Errors:</h4>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {result.errors.slice(0, 5).map((error, idx) => (
+                      <div key={idx} className="text-xs text-muted-foreground">{error}</div>
+                    ))}
+                    {result.errors.length > 5 && (
+                      <div className="text-xs text-muted-foreground">
+                        ...and {result.errors.length - 5} more
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
