@@ -12,6 +12,7 @@ import { DateRangePicker } from '@/components/DateRangePicker';
 import { LeaveHeatmap } from '@/components/LeaveHeatmap';
 import { EmployeeSelect } from '@/components/EmployeeSelect';
 import { EmployeeLeaveHeatmap } from '@/components/EmployeeLeaveHeatmap';
+import { EmployeeAbsenceLineChart } from '@/components/EmployeeAbsenceLineChart';
 import { getCurrentFinancialYear } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
@@ -244,6 +245,44 @@ const LeaveAttendance = () => {
                     endDate={employeeDateRange?.to || financialYear.endDate}
                     leaveTypes={absenceTypes?.leaveTypes || []}
                     regularizationTypes={absenceTypes?.regularizationTypes || []}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    No data available for selected filters
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Trends Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Employee Absence Trends</CardTitle>
+                <CardDescription>
+                  Monthly trends showing the number of instances for each selected absence type
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingEmployeeData ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Skeleton className="h-[300px] w-full" />
+                  </div>
+                ) : !selectedEmployee ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    Please select an employee to view trends
+                  </div>
+                ) : employeeSelectedTypes.length === 0 ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    Please select at least one absence type to view trends
+                  </div>
+                ) : employeeData ? (
+                  <EmployeeAbsenceLineChart
+                    data={employeeData}
+                    selectedTypes={employeeSelectedTypes}
+                    leaveTypes={absenceTypes?.leaveTypes || []}
+                    regularizationTypes={absenceTypes?.regularizationTypes || []}
+                    startDate={employeeDateRange?.from || financialYear.startDate}
+                    endDate={employeeDateRange?.to || financialYear.endDate}
                   />
                 ) : (
                   <div className="flex items-center justify-center py-12 text-muted-foreground">
