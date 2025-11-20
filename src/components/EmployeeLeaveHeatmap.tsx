@@ -35,7 +35,7 @@ export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate,
     }
     
     // Check for business travel/events (green) - must come before other regularization checks
-    if (absenceType === 'Attending Business Events' || absenceType === 'Travelling For Work') {
+    if (absenceType === 'Attending Business Events' || absenceType === 'Travelling for Work') {
       return 'bg-green-500';
     }
     
