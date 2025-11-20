@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Pencil, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
-import { EmployeeImport } from '@/components/EmployeeImport';
 import { logActivity } from '@/lib/activityLogger';
 
 type Employee = {
@@ -527,10 +526,6 @@ const Employees = () => {
             </TableBody>
           </Table>
         </div>
-
-        {isSuperAdmin && (
-          <EmployeeImport onImportComplete={fetchEmployees} />
-        )}
       </div>
     </DashboardLayout>
   );
