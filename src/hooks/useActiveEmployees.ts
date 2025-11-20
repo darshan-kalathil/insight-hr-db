@@ -5,6 +5,7 @@ export interface Employee {
   id: string;
   name: string;
   empl_no: string;
+  location: string;
 }
 
 export const useActiveEmployees = () => {
@@ -13,7 +14,7 @@ export const useActiveEmployees = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employees')
-        .select('id, name, empl_no')
+        .select('id, name, empl_no, location')
         .eq('status', 'Active')
         .order('name');
 
