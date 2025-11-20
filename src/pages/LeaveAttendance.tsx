@@ -10,6 +10,7 @@ import { useEmployeeAbsenceData } from '@/hooks/useEmployeeAbsenceData';
 import { AbsenceTypeSelect } from '@/components/AbsenceTypeSelect';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { LeaveHeatmap } from '@/components/LeaveHeatmap';
+import { OrgAbsenceLineChart } from '@/components/OrgAbsenceLineChart';
 import { EmployeeSelect } from '@/components/EmployeeSelect';
 import { EmployeeLeaveHeatmap } from '@/components/EmployeeLeaveHeatmap';
 import { EmployeeAbsenceLineChart } from '@/components/EmployeeAbsenceLineChart';
@@ -167,6 +168,40 @@ const LeaveAttendance = () => {
                 ) : orgData && orgData.length > 0 ? (
                   <LeaveHeatmap
                     data={orgData}
+                    startDate={dateRange?.from || financialYear.startDate}
+                    endDate={dateRange?.to || financialYear.endDate}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    No data available for selected filters
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Trends Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Organizational Absence Trends</CardTitle>
+                <CardDescription>
+                  Monthly trends showing the total number of instances for each selected absence type across the organization
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingData ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Skeleton className="h-[300px] w-full" />
+                  </div>
+                ) : selectedTypes.length === 0 ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    Please select at least one absence type to view trends
+                  </div>
+                ) : orgData && orgData.length > 0 ? (
+                  <OrgAbsenceLineChart
+                    data={orgData}
+                    selectedTypes={selectedTypes}
+                    leaveTypes={absenceTypes?.leaveTypes || []}
+                    regularizationTypes={absenceTypes?.regularizationTypes || []}
                     startDate={dateRange?.from || financialYear.startDate}
                     endDate={dateRange?.to || financialYear.endDate}
                   />
