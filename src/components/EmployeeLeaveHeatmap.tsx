@@ -4,6 +4,7 @@ import { EmployeeDailyAbsence } from '@/hooks/useEmployeeAbsenceData';
 
 interface EmployeeLeaveHeatmapProps {
   data: EmployeeDailyAbsence[];
+  attendanceData: { date: string; status: string }[];
   startDate: Date;
   endDate: Date;
   leaveTypes: string[];
@@ -12,9 +13,12 @@ interface EmployeeLeaveHeatmapProps {
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
-export const EmployeeLeaveHeatmap = ({ data, startDate, endDate, leaveTypes, regularizationTypes }: EmployeeLeaveHeatmapProps) => {
+export const EmployeeLeaveHeatmap = ({ data, attendanceData, startDate, endDate, leaveTypes, regularizationTypes }: EmployeeLeaveHeatmapProps) => {
   // Create a map for quick lookup
   const dataMap = new Map(data.map(d => [d.date, d.absenceType]));
+  
+  // Create attendance map for quick lookup
+  const attendanceMap = new Map(attendanceData.map(d => [d.date, d.status]));
 
   // Get color for absence based on type
   const getColorForAbsence = (absenceType: string | null) => {
@@ -46,6 +50,11 @@ export const EmployeeLeaveHeatmap = ({ data, startDate, endDate, leaveTypes, reg
   const isWeekend = (dateStr: string): boolean => {
     const day = getDay(new Date(dateStr));
     return day === 0 || day === 6;
+  };
+
+  // Check if status represents an absence
+  const isAbsentStatus = (status: string): boolean => {
+    return status === 'Absent' || status === 'Unapproved Absence';
   };
 
   // Generate year range
@@ -85,6 +94,13 @@ export const EmployeeLeaveHeatmap = ({ data, startDate, endDate, leaveTypes, reg
           
           <span className="text-muted-foreground ml-2">Business Events / Travel</span>
           <div className="w-4 h-4 bg-green-500 border border-border"></div>
+          
+          <span className="text-muted-foreground ml-2">Absent (No Leave/Regularization)</span>
+          <div className="w-4 h-4 bg-muted/20 border border-border relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+            </div>
+          </div>
         </div>
 
         {/* Heatmap Grid */}
@@ -140,14 +156,24 @@ export const EmployeeLeaveHeatmap = ({ data, startDate, endDate, leaveTypes, reg
                     }
                     
                     const absenceType = dataMap.get(dateStr);
+                    const attendanceStatus = attendanceMap.get(dateStr);
+                    const showRedDot = !absenceType && attendanceStatus && isAbsentStatus(attendanceStatus);
 
                     return (
                       <TooltipProvider key={`${monthIdx}-${day}`}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div
-                              className={`w-7 h-6 border border-border cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:scale-110 ${getColorForAbsence(absenceType)}`}
-                            ></div>
+                            <div className="relative">
+                              <div
+                                className={`w-7 h-6 border border-border cursor-pointer transition-all hover:ring-2 hover:ring-primary hover:scale-110 ${getColorForAbsence(absenceType)}`}
+                              >
+                                {showRedDot && (
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <div className="space-y-1">
@@ -158,6 +184,8 @@ export const EmployeeLeaveHeatmap = ({ data, startDate, endDate, leaveTypes, reg
                                 <p className="text-sm">
                                   Absent: {absenceType}
                                 </p>
+                              ) : showRedDot ? (
+                                <p className="text-sm text-red-500">Attendance: {attendanceStatus}</p>
                               ) : (
                                 <p className="text-sm">Present</p>
                               )}

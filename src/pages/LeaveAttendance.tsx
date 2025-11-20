@@ -7,6 +7,7 @@ import { useAbsenceTypes } from '@/hooks/useAbsenceTypes';
 import { useOrgAbsenceData } from '@/hooks/useOrgAbsenceData';
 import { useActiveEmployees } from '@/hooks/useActiveEmployees';
 import { useEmployeeAbsenceData } from '@/hooks/useEmployeeAbsenceData';
+import { useEmployeeAttendanceData } from '@/hooks/useEmployeeAttendanceData';
 import { AbsenceTypeSelect } from '@/components/AbsenceTypeSelect';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { LeaveHeatmap } from '@/components/LeaveHeatmap';
@@ -76,6 +77,13 @@ const LeaveAttendance = () => {
   const { data: employeeData, isLoading: isLoadingEmployeeData, error: employeeDataError } = useEmployeeAbsenceData(
     selectedEmployee,
     employeeSelectedTypes,
+    employeeDateRange?.from || financialYear.startDate,
+    employeeDateRange?.to || financialYear.endDate
+  );
+
+  // Fetch employee attendance data
+  const { data: employeeAttendanceData, isLoading: isLoadingAttendance } = useEmployeeAttendanceData(
+    selectedEmployee,
     employeeDateRange?.from || financialYear.startDate,
     employeeDateRange?.to || financialYear.endDate
   );
@@ -261,7 +269,7 @@ const LeaveAttendance = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingEmployeeData ? (
+                {(isLoadingEmployeeData || isLoadingAttendance) ? (
                   <div className="flex items-center justify-center py-12">
                     <Skeleton className="h-[400px] w-full" />
                   </div>
@@ -276,6 +284,7 @@ const LeaveAttendance = () => {
                 ) : employeeData ? (
                   <EmployeeLeaveHeatmap
                     data={employeeData}
+                    attendanceData={employeeAttendanceData || []}
                     startDate={employeeDateRange?.from || financialYear.startDate}
                     endDate={employeeDateRange?.to || financialYear.endDate}
                     leaveTypes={absenceTypes?.leaveTypes || []}
