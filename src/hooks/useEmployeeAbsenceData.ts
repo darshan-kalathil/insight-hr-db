@@ -26,7 +26,7 @@ export const useEmployeeAbsenceData = (
         .from('leave_records')
         .select('from_date, to_date, leave_type, approval_status')
         .eq('employee_code', employeeCode)
-        .in('approval_status', ['Approved', 'Pending'])
+        .not('approval_status', 'in', '("Rejected","Cancelled")')
         .gte('to_date', startDateStr)
         .lte('from_date', endDateStr);
 
@@ -37,7 +37,7 @@ export const useEmployeeAbsenceData = (
         .from('attendance_regularization')
         .select('attendance_day, reason, approval_status')
         .eq('employee_code', employeeCode)
-        .in('approval_status', ['Approved', 'Pending'])
+        .not('approval_status', 'in', '("Cancelled")')
         .gte('attendance_day', startDateStr)
         .lte('attendance_day', endDateStr);
 

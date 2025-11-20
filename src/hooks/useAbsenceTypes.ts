@@ -18,11 +18,11 @@ export const useAbsenceTypes = () => {
 
       if (leaveError) throw leaveError;
 
-      // Fetch distinct regularization reasons (excluding rejected/cancelled)
+      // Fetch distinct regularization reasons (excluding cancelled)
       const { data: regularizationData, error: regularizationError } = await supabase
         .from('attendance_regularization')
         .select('reason')
-        .not('approval_status', 'in', '("Rejected by System","Cancelled")')
+        .not('approval_status', 'in', '("Cancelled")')
         .order('reason');
 
       if (regularizationError) throw regularizationError;
