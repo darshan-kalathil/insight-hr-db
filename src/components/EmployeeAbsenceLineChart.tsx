@@ -18,6 +18,9 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 
   if (nonZeroPayload.length === 0) return null;
 
+  // Calculate total
+  const total = nonZeroPayload.reduce((sum, entry) => sum + entry.value, 0);
+
   return (
     <div className="rounded-lg border bg-background p-2 shadow-md">
       <p className="text-sm font-medium mb-2">{label}</p>
@@ -31,6 +34,10 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
           <span className="font-medium ml-auto">{entry.value}</span>
         </div>
       ))}
+      <div className="flex items-center gap-2 text-sm mt-2 pt-2 border-t border-border">
+        <span className="font-semibold">Total Absences</span>
+        <span className="font-semibold ml-auto">{total}</span>
+      </div>
     </div>
   );
 };
