@@ -1,7 +1,4 @@
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { AttendanceUpload } from '@/components/AttendanceUpload';
-import { LeaveUpload } from '@/components/LeaveUpload';
-import { RegularizationUpload } from '@/components/RegularizationUpload';
 
 const LeaveAttendance = () => {
   return (
@@ -10,14 +7,12 @@ const LeaveAttendance = () => {
         <div>
           <h1 className="text-3xl font-bold">Leave & Attendance</h1>
           <p className="text-muted-foreground mt-2">
-            Upload and manage employee leave and attendance records.
+            View and manage employee leave and attendance records.
           </p>
         </div>
 
-        <div className="space-y-6">
-          <AttendanceUpload />
-          <LeaveUpload />
-          <RegularizationUpload />
+        <div className="text-muted-foreground">
+          <p>Leave and attendance management features coming soon.</p>
         </div>
       </div>
     </DashboardLayout>
