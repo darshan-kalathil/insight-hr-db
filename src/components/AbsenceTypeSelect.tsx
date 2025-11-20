@@ -39,6 +39,19 @@ export const AbsenceTypeSelect = ({
     }
   };
 
+  const selectAllLeaves = () => {
+    const allLeaves = [...new Set([...selectedTypes, ...leaveTypes])];
+    onSelectedTypesChange(allLeaves);
+  };
+
+  const selectAllRegularizations = () => {
+    const allRegularizations = [...new Set([...selectedTypes, ...regularizationTypes])];
+    onSelectedTypesChange(allRegularizations);
+  };
+
+  const areAllLeavesSelected = leaveTypes.every(type => selectedTypes.includes(type));
+  const areAllRegularizationsSelected = regularizationTypes.every(type => selectedTypes.includes(type));
+
   const displayText = selectedTypes.length === 0
     ? 'Select absence types'
     : `${selectedTypes.length} type${selectedTypes.length > 1 ? 's' : ''} selected`;
@@ -63,6 +76,16 @@ export const AbsenceTypeSelect = ({
             
             {leaveTypes.length > 0 && (
               <CommandGroup heading="Leaves">
+                <CommandItem
+                  onSelect={selectAllLeaves}
+                  className="cursor-pointer font-semibold border-b border-border mb-1"
+                >
+                  <Checkbox
+                    checked={areAllLeavesSelected}
+                    className="mr-2"
+                  />
+                  <span>Select All Leaves</span>
+                </CommandItem>
                 {leaveTypes.map((type) => (
                   <CommandItem
                     key={type}
@@ -81,6 +104,16 @@ export const AbsenceTypeSelect = ({
             
             {regularizationTypes.length > 0 && (
               <CommandGroup heading="Regularizations">
+                <CommandItem
+                  onSelect={selectAllRegularizations}
+                  className="cursor-pointer font-semibold border-b border-border mb-1"
+                >
+                  <Checkbox
+                    checked={areAllRegularizationsSelected}
+                    className="mr-2"
+                  />
+                  <span>Select All Regularizations</span>
+                </CommandItem>
                 {regularizationTypes.map((type) => (
                   <CommandItem
                     key={type}
