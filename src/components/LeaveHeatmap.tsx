@@ -34,12 +34,6 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
     return 'bg-primary';
   };
 
-  // Check if a date is a weekend (Saturday = 6, Sunday = 0)
-  const isWeekend = (dateStr: string): boolean => {
-    const day = getDay(new Date(dateStr));
-    return day === 0 || day === 6;
-  };
-
   // Generate year range
   const startYear = startDate.getFullYear();
   const endYear = endDate.getFullYear();
@@ -116,16 +110,6 @@ export const LeaveHeatmap = ({ data, startDate, endDate }: LeaveHeatmapProps) =>
                         <div 
                           key={`empty-${monthIdx}-${day}`} 
                           className="w-7 h-6"
-                        ></div>
-                      );
-                    }
-
-                    // If weekend, render black cell with no interaction
-                    if (isWeekend(dateStr)) {
-                      return (
-                        <div 
-                          key={`weekend-${monthIdx}-${day}`} 
-                          className="w-7 h-6 bg-black border border-border"
                         ></div>
                       );
                     }
