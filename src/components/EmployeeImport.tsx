@@ -60,39 +60,56 @@ export const EmployeeImport = ({
       };
       for (const row of jsonData as any[]) {
         try {
-          const employeeData = {
-            empl_no: row['Empl No']?.toString(),
-            name: row['Name'],
-            official_email: row['Official EMail ID'],
-            mobile_number: row['Mobile Number']?.toString() || null,
-            personal_email: row['Personal EMail ID'] || null,
-            status: row['Status'] || 'Active',
-            pod: row['POD'],
-            pod_lead: row['POD Lead'] || null,
-            reporting_manager: row['Reporting Manager'] || null,
-            level: row['Level'],
-            location: row['Location'],
-            gender: row['Gender'] || null,
-            type: row['Type'] || 'EMP',
-            salary: row['Fixed Salary'] ? parseFloat(row['Fixed Salary']) : null,
-            doj: parseDate(row['DOJ']),
-            date_of_exit: parseDate(row['Date of Exit']),
-            birthday: parseDate(row['Birthday'])
-          };
+          const emplNo = row['Empl No']?.toString();
+          if (!emplNo) {
+            throw new Error('Employee Code is required');
+          }
+
+          // Build employee data object with only provided fields
+          const employeeData: any = { empl_no: emplNo };
+          
+          if (row['Name'] !== undefined) employeeData.name = row['Name'];
+          if (row['Official EMail ID'] !== undefined) employeeData.official_email = row['Official EMail ID'];
+          if (row['Mobile Number'] !== undefined) employeeData.mobile_number = row['Mobile Number']?.toString() || null;
+          if (row['Personal EMail ID'] !== undefined) employeeData.personal_email = row['Personal EMail ID'] || null;
+          if (row['Status'] !== undefined) employeeData.status = row['Status'];
+          if (row['POD'] !== undefined) employeeData.pod = row['POD'];
+          if (row['POD Lead'] !== undefined) employeeData.pod_lead = row['POD Lead'] || null;
+          if (row['Reporting Manager'] !== undefined) employeeData.reporting_manager = row['Reporting Manager'] || null;
+          if (row['Level'] !== undefined) employeeData.level = row['Level'];
+          if (row['Location'] !== undefined) employeeData.location = row['Location'];
+          if (row['Gender'] !== undefined) employeeData.gender = row['Gender'] || null;
+          if (row['Type'] !== undefined) employeeData.type = row['Type'];
+          if (row['Fixed Salary'] !== undefined) employeeData.salary = row['Fixed Salary'] ? parseFloat(row['Fixed Salary']) : null;
+          if (row['DOJ'] !== undefined) employeeData.doj = parseDate(row['DOJ']);
+          if (row['Date of Exit'] !== undefined) employeeData.date_of_exit = parseDate(row['Date of Exit']);
+          if (row['Birthday'] !== undefined) employeeData.birthday = parseDate(row['Birthday']);
 
           // Check if employee exists
           const {
             data: existing
-          } = await supabase.from('employees').select('id').eq('empl_no', employeeData.empl_no).single();
+          } = await supabase.from('employees').select('id').eq('empl_no', emplNo).single();
+          
           if (existing) {
-            // Update existing employee
+            // Update existing employee with only provided fields
             const {
               error
-            } = await supabase.from('employees').update(employeeData).eq('empl_no', employeeData.empl_no);
+            } = await supabase.from('employees').update(employeeData).eq('empl_no', emplNo);
             if (error) throw error;
             results.updated++;
           } else {
-            // Insert new employee
+            // For new employees, require all mandatory fields
+            const requiredFields = ['name', 'official_email', 'pod', 'level', 'location', 'doj'];
+            const missingFields = requiredFields.filter(field => !employeeData[field]);
+            
+            if (missingFields.length > 0) {
+              throw new Error(`Missing required fields for new employee: ${missingFields.join(', ')}`);
+            }
+            
+            // Set defaults for optional fields if not provided
+            if (!employeeData.status) employeeData.status = 'Active';
+            if (!employeeData.type) employeeData.type = 'EMP';
+            
             const {
               error
             } = await supabase.from('employees').insert([employeeData]);
