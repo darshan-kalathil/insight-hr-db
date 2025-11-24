@@ -208,7 +208,7 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
       </div>
 
       <ResponsiveContainer width="100%" height={600}>
-        <ScatterChart margin={{ top: 40, right: 100, bottom: 20, left: 60 }}>
+        <ScatterChart margin={{ top: 40, right: 150, bottom: 20, left: 60 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             type="number"
@@ -240,9 +240,9 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
                 strokeWidth={2}
                 label={{ 
                   value: `Min: ${levelStats.min.toFixed(1)}L`, 
-                  position: 'insideTopRight',
+                  position: 'right',
                   fill: LEVEL_COLORS[selectedLevel!],
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: 'bold'
                 }}
               />
@@ -252,9 +252,9 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
                 strokeWidth={2}
                 label={{ 
                   value: `Max: ${levelStats.max.toFixed(1)}L`, 
-                  position: 'insideBottomRight',
+                  position: 'right',
                   fill: LEVEL_COLORS[selectedLevel!],
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: 'bold'
                 }}
               />
@@ -265,11 +265,10 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
                 strokeDasharray="5 5"
                 label={{ 
                   value: `Median: ${levelStats.median.toFixed(1)}L`, 
-                  position: 'insideTopRight',
+                  position: 'right',
                   fill: LEVEL_COLORS[selectedLevel!],
-                  fontSize: 12,
-                  fontWeight: 'bold',
-                  offset: 15
+                  fontSize: 14,
+                  fontWeight: 'bold'
                 }}
               />
             </>
