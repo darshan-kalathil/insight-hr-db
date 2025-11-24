@@ -17,9 +17,10 @@ const loginSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, resetPassword } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -60,43 +61,118 @@ const Auth = () => {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+
+    try {
+      const emailSchema = z.string().email('Invalid email address');
+      emailSchema.parse(email);
+      
+      const { error } = await resetPassword(email);
+      
+      if (error) {
+        toast({
+          title: 'Password reset failed',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Check your email',
+          description: 'Password reset link has been sent to your email address.'
+        });
+        setShowReset(false);
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Validation error',
+          description: error.errors[0].message,
+          variant: 'destructive'
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>HR Data Analysis</CardTitle>
-          <CardDescription>Login or create an account to continue</CardDescription>
+          <CardDescription>
+            {showReset ? 'Reset your password' : 'Login or create an account to continue'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                name="email" 
-                type="email" 
-                placeholder="your@email.com" 
-                required 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                name="password" 
-                type="password" 
-                placeholder="••••••" 
-                required 
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login'}
-            </Button>
-            <p className="text-sm text-center text-muted-foreground mt-4">
-              Don't have an account? Contact your administrator for access.
-            </p>
-          </form>
+          {showReset ? (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">Email</Label>
+                <Input 
+                  id="reset-email" 
+                  name="email" 
+                  type="email" 
+                  placeholder="your@email.com" 
+                  required 
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                className="w-full" 
+                onClick={() => setShowReset(false)}
+              >
+                Back to Login
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input 
+                  id="email" 
+                  name="email" 
+                  type="email" 
+                  placeholder="your@email.com" 
+                  required 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  name="password" 
+                  type="password" 
+                  placeholder="••••••" 
+                  required 
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Logging in...' : 'Login'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="link" 
+                className="w-full text-sm" 
+                onClick={() => setShowReset(true)}
+              >
+                Forgot Password?
+              </Button>
+              <p className="text-sm text-center text-muted-foreground mt-4">
+                Don't have an account? Contact your administrator for access.
+              </p>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
