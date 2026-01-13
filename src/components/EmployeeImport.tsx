@@ -81,6 +81,7 @@ export const EmployeeImport = ({
           if (row['Gender'] !== undefined) employeeData.gender = row['Gender'] || null;
           if (row['Type'] !== undefined) employeeData.type = row['Type'];
           if (row['Fixed Salary'] !== undefined) employeeData.salary = row['Fixed Salary'] ? parseFloat(row['Fixed Salary']) : null;
+          if (row['EPF'] !== undefined) employeeData.epf = row['EPF'] ? parseFloat(row['EPF']) : null;
           if (row['DOJ'] !== undefined) employeeData.doj = parseDate(row['DOJ']);
           if (row['Date of Exit'] !== undefined) employeeData.date_of_exit = parseDate(row['Date of Exit']);
           if (row['Birthday'] !== undefined) employeeData.birthday = parseDate(row['Birthday']);
