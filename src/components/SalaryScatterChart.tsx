@@ -8,6 +8,7 @@ interface Employee {
   name: string;
   level: string;
   salary: number;
+  epf: number | null;
 }
 
 interface SalaryRange {
@@ -52,11 +53,14 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
       const levelRange = salaryRanges.find(r => normalizeLevel(r.level) === normalizedLevel);
       const variablePercentage = levelRange?.variable_pay_percentage || 0;
       
-      // Salary already includes EPF, so use as-is for fixed_epf mode
-      let displaySalary = emp.salary; // Fixed (as uploaded)
+      // Fixed + EPF consolidated
+      const fixedPlusEpf = emp.salary + (emp.epf || 0);
+      
+      // Calculate display salary based on mode
+      let displaySalary = fixedPlusEpf; // Fixed + EPF mode
       if (salaryMode === 'ctc') {
-        // CTC = Fixed (already in salary) + Variable Pay
-        displaySalary = emp.salary + (emp.salary * (variablePercentage / 100));
+        // CTC = (Fixed + EPF) + Variable Pay
+        displaySalary = fixedPlusEpf + (fixedPlusEpf * (variablePercentage / 100));
       }
       
       return {
@@ -65,6 +69,8 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
         name: emp.name,
         level: normalizedLevel,
         originalSalary: emp.salary,
+        originalEpf: emp.epf || 0,
+        fixedPlusEpf: fixedPlusEpf,
         fill: LEVEL_COLORS[normalizedLevel] || '#6B7280',
       };
     });
@@ -132,16 +138,17 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
-      // originalSalary already includes Fixed
-      const fixedWithEpf = data.originalSalary;
+      
+      // Fixed + EPF consolidated
+      const fixedPlusEpf = data.fixedPlusEpf;
       
       // Get variable pay percentage for this level
       const levelRange = salaryRanges.find(r => normalizeLevel(r.level) === data.level);
       const variablePercentage = levelRange?.variable_pay_percentage || 0;
       
-      // Calculate components
-      const variable = Math.round(fixedWithEpf * (variablePercentage / 100));
-      const ctc = fixedWithEpf + variable;
+      // Calculate variable pay based on Fixed + EPF
+      const variable = Math.round(fixedPlusEpf * (variablePercentage / 100));
+      const ctc = fixedPlusEpf + variable;
       
       const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-IN', {
@@ -156,7 +163,7 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
           <p className="font-bold text-lg">{data.name}</p>
           <p className="text-sm">Level: {data.level}</p>
           <div className="border-t border-gray-600 my-2 pt-2 space-y-1">
-            <p className="text-sm font-bold">Fixed: {formatCurrency(fixedWithEpf)}</p>
+            <p className="text-sm font-bold">Fixed + EPF: {formatCurrency(fixedPlusEpf)}</p>
             <p className="text-sm">Variable ({variablePercentage}%): {formatCurrency(variable)}</p>
             <p className="text-sm border-t border-gray-600 pt-1 mt-1 font-bold">CTC: {formatCurrency(ctc)}</p>
           </div>
@@ -180,7 +187,7 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="fixed_epf">Fixed</SelectItem>
+              <SelectItem value="fixed_epf">Fixed + EPF</SelectItem>
               <SelectItem value="ctc">CTC (with Variable)</SelectItem>
             </SelectContent>
           </Select>
@@ -220,10 +227,10 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
           <YAxis
             type="number"
             dataKey="salary"
-            name={salaryMode === 'ctc' ? 'CTC' : 'Fixed'}
+            name={salaryMode === 'ctc' ? 'CTC' : 'Fixed + EPF'}
             domain={[0, 'auto']}
             label={{ 
-              value: salaryMode === 'ctc' ? 'CTC (Lakhs)' : 'Fixed (Lakhs)', 
+              value: salaryMode === 'ctc' ? 'CTC (Lakhs)' : 'Fixed + EPF (Lakhs)', 
               angle: -90, 
               position: 'insideLeft' 
             }}

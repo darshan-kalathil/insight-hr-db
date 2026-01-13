@@ -19,6 +19,7 @@ type Employee = {
   name: string;
   level: string;
   salary: number;
+  epf: number | null;
 };
 
 const Salary = () => {
@@ -34,7 +35,7 @@ const Salary = () => {
     try {
       const [rangesResult, employeesResult] = await Promise.all([
         supabase.from('salary_ranges').select('id, level, min_salary, max_salary, variable_pay_percentage').order('min_salary', { ascending: false }),
-        supabase.from('employees').select('id, name, level, salary').eq('status', 'Active').not('salary', 'is', null)
+        supabase.from('employees').select('id, name, level, salary, epf').eq('status', 'Active').not('salary', 'is', null)
       ]);
 
       if (rangesResult.error) throw rangesResult.error;

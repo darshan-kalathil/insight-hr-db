@@ -111,6 +111,7 @@ const Employees = () => {
       reporting_manager: formData.get('reporting_manager') as string,
       level: formData.get('level') as string,
       salary: formData.get('salary') ? parseFloat(formData.get('salary') as string) : null,
+      epf: formData.get('epf') ? parseFloat(formData.get('epf') as string) : null,
       doj: formData.get('doj') as string,
       date_of_exit: dateOfExit || null,
       location: formData.get('location') as string,
@@ -275,8 +276,12 @@ const Employees = () => {
                       <Input id="level" name="level" placeholder="N+1, N+2, etc." defaultValue={editingEmployee?.level} required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="salary">Fixed Salary</Label>
-                      <Input id="salary" name="salary" type="number" step="0.01" placeholder="Enter salary" defaultValue={(editingEmployee as any)?.salary} />
+                      <Label htmlFor="salary">Fixed Pay</Label>
+                      <Input id="salary" name="salary" type="number" step="0.01" placeholder="Enter fixed pay" defaultValue={(editingEmployee as any)?.salary} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="epf">EPF (Employer Contribution)</Label>
+                      <Input id="epf" name="epf" type="number" step="0.01" placeholder="Enter EPF amount" defaultValue={(editingEmployee as any)?.epf} />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="doj">Date of Joining*</Label>

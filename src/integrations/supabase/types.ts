@@ -162,6 +162,7 @@ export type Database = {
           date_of_exit: string | null
           doj: string
           empl_no: string
+          epf: number | null
           gender: string | null
           id: string
           level: string
@@ -184,6 +185,7 @@ export type Database = {
           date_of_exit?: string | null
           doj: string
           empl_no: string
+          epf?: number | null
           gender?: string | null
           id?: string
           level: string
@@ -206,6 +208,7 @@ export type Database = {
           date_of_exit?: string | null
           doj?: string
           empl_no?: string
+          epf?: number | null
           gender?: string | null
           id?: string
           level?: string
