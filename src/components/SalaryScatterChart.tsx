@@ -45,7 +45,7 @@ export const SalaryScatterChart = ({ employees, salaryRanges }: SalaryScatterCha
     // Filter employees with salary data and sort by salary descending
     const employeesWithSalary = employees
       .filter(emp => emp.salary && emp.salary > 0)
-      .sort((a, b) => b.salary - a.salary);
+      .sort((a, b) => (b.salary + (b.epf || 0)) - (a.salary + (a.epf || 0)));
 
     // Convert to chart format with index and salary in lakhs
     return employeesWithSalary.map((emp, index) => {
