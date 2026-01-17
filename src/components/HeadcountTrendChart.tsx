@@ -127,11 +127,16 @@ export const HeadcountTrendChart = ({
               <XAxis dataKey="month" />
               <YAxis domain={['auto', 'auto']} />
               <Tooltip
-                formatter={(value: number, name: string) => {
+                formatter={(value: number, name: string, props: any) => {
+                  // Don't show "Projected" for the connector point (December)
+                  if (name === 'projection' && props.payload?.isConnector) {
+                    return [null, null]; // Hide this entry
+                  }
                   const label = name === 'projection' ? 'Projected Headcount' : 'Headcount';
                   return [value, label];
                 }}
                 labelFormatter={(label) => `Month: ${label}`}
+                itemSorter={() => -1}
               />
               <Legend 
                 formatter={(value) => value === 'projection' ? 'Projected' : 'Actual'}
