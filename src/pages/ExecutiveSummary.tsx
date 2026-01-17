@@ -104,24 +104,25 @@ const ExecutiveSummary = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
-          <ExecutiveSummaryTable
-            employees={employees || []}
-            selectedMonth={selectedDate}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
+          <div className="flex flex-col gap-4">
+            <ExecutiveSummaryTable
+              employees={employees || []}
+              selectedMonth={selectedDate}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+            />
+            <AdditionsExitsTable
+              employees={employees || []}
+              selectedMonth={selectedDate}
+              viewMode={viewMode}
+            />
+          </div>
           <HeadcountStatsCards
             employees={employees || []}
             selectedMonth={selectedDate}
             viewMode={viewMode}
           />
         </div>
-
-        <AdditionsExitsTable
-          employees={employees || []}
-          selectedMonth={selectedDate}
-          viewMode={viewMode}
-        />
 
         <HeadcountTrendChart
           employees={employees || []}
