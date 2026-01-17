@@ -35,10 +35,13 @@ const YEARS = Array.from({ length: 10 }, (_, i) => ({
   label: String(currentYear - 5 + i),
 }));
 
+export type ViewMode = 'endOfMonth' | 'asOfToday';
+
 const ExecutiveSummary = () => {
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
+  const [viewMode, setViewMode] = useState<ViewMode>('endOfMonth');
 
   const { data: employees, isLoading } = useExecutiveSummaryData();
 
@@ -104,6 +107,8 @@ const ExecutiveSummary = () => {
           <ExecutiveSummaryTable
             employees={employees || []}
             selectedMonth={selectedDate}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
           />
           <HeadcountStatsCards
             employees={employees || []}
@@ -114,6 +119,7 @@ const ExecutiveSummary = () => {
         <AdditionsExitsTable
           employees={employees || []}
           selectedMonth={selectedDate}
+          viewMode={viewMode}
         />
 
         <HeadcountTrendChart

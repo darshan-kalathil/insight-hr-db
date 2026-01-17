@@ -3,25 +3,41 @@ import {
   Employee,
   getAdditionsInMonth,
   getExitsInMonth,
+  getAdditionsUpToDate,
+  getExitsUpToDate,
 } from '@/hooks/useExecutiveSummaryData';
+import { ViewMode } from '@/pages/ExecutiveSummary';
 
 interface AdditionsExitsTableProps {
   employees: Employee[];
   selectedMonth: Date;
+  viewMode: ViewMode;
 }
 
 export const AdditionsExitsTable = ({
   employees,
   selectedMonth,
+  viewMode,
 }: AdditionsExitsTableProps) => {
-  const additions = getAdditionsInMonth(employees, selectedMonth);
-  const exits = getExitsInMonth(employees, selectedMonth);
+  const today = new Date();
+  const isEndOfMonth = viewMode === 'endOfMonth';
+
+  const additions = isEndOfMonth
+    ? getAdditionsInMonth(employees, selectedMonth)
+    : getAdditionsUpToDate(employees, selectedMonth, today);
+
+  const exits = isEndOfMonth
+    ? getExitsInMonth(employees, selectedMonth)
+    : getExitsUpToDate(employees, selectedMonth, today);
+
+  const additionsTitle = isEndOfMonth ? 'New Additions' : 'New Additions (as of today)';
+  const exitsTitle = isEndOfMonth ? 'Exits' : 'Exits (as of today)';
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-green-600">New Additions</CardTitle>
+          <CardTitle className="text-green-600">{additionsTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           {additions.length > 0 ? (
@@ -46,7 +62,7 @@ export const AdditionsExitsTable = ({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-red-600">Exits</CardTitle>
+          <CardTitle className="text-red-600">{exitsTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           {exits.length > 0 ? (
