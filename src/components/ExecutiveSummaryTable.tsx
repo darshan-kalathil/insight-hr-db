@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { format, lastDayOfMonth } from 'date-fns';
 import {
   Table,
@@ -9,12 +10,24 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   LEVELS,
   Employee,
   getLevelHeadcount,
+  getLevelHeadcountAsOfDate,
   getAdditionsInMonth,
   getExitsInMonth,
+  getAdditionsUpToDate,
+  getExitsUpToDate,
 } from '@/hooks/useExecutiveSummaryData';
+
+type ViewMode = 'endOfMonth' | 'asOfToday';
 
 interface ExecutiveSummaryTableProps {
   employees: Employee[];
@@ -25,15 +38,30 @@ export const ExecutiveSummaryTable = ({
   employees,
   selectedMonth,
 }: ExecutiveSummaryTableProps) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('endOfMonth');
+  const today = new Date();
+  
   const lastDay = lastDayOfMonth(selectedMonth);
-  const dateHeader = `Active as on ${format(lastDay, 'do MMMM')}`;
+  const isEndOfMonth = viewMode === 'endOfMonth';
+  
+  const dateHeader = isEndOfMonth
+    ? `Active as on ${format(lastDay, 'do MMMM')}`
+    : `Active as on ${format(today, 'do MMMM')}`;
 
-  const additions = getAdditionsInMonth(employees, selectedMonth);
-  const exits = getExitsInMonth(employees, selectedMonth);
+  // Calculate additions and exits based on view mode
+  const additions = isEndOfMonth
+    ? getAdditionsInMonth(employees, selectedMonth)
+    : getAdditionsUpToDate(employees, selectedMonth, today);
+  
+  const exits = isEndOfMonth
+    ? getExitsInMonth(employees, selectedMonth)
+    : getExitsUpToDate(employees, selectedMonth, today);
 
   const levelData = LEVELS.map(level => ({
     level,
-    active: getLevelHeadcount(employees, selectedMonth, level),
+    active: isEndOfMonth
+      ? getLevelHeadcount(employees, selectedMonth, level)
+      : getLevelHeadcountAsOfDate(employees, today, level),
     additions: additions.filter(emp => emp.level === level).length,
     exits: exits.filter(emp => emp.level === level).length,
   }));
@@ -49,8 +77,17 @@ export const ExecutiveSummaryTable = ({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle>Level-wise Headcount</CardTitle>
+        <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="endOfMonth">End of Month</SelectItem>
+            <SelectItem value="asOfToday">As of Today</SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent>
         <Table>
