@@ -20,6 +20,12 @@ export const useExecutiveSummaryData = () => {
   return useQuery({
     queryKey: ['executive-summary-employees'],
     queryFn: async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData.session) {
+        throw new Error('AUTH_REQUIRED');
+      }
+
       const { data, error } = await supabase
         .from('employees')
         .select('id, name, empl_no, level, pod, doj, date_of_exit, status, gender')
