@@ -26,6 +26,7 @@ import {
   getExitsUpToDate,
 } from '@/hooks/useExecutiveSummaryData';
 import { ViewMode } from '@/pages/ExecutiveSummary';
+import { LevelHeadcountBarChart } from './LevelHeadcountBarChart';
 
 interface ExecutiveSummaryTableProps {
   employees: Employee[];
@@ -91,6 +92,11 @@ export const ExecutiveSummaryTable = ({
         </Select>
       </CardHeader>
       <CardContent>
+        <LevelHeadcountBarChart
+          employees={employees}
+          selectedMonth={selectedMonth}
+          viewMode={viewMode}
+        />
         <Table>
           <TableHeader>
             <TableRow>
