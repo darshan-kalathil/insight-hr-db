@@ -43,7 +43,7 @@ const ExecutiveSummary = () => {
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [viewMode, setViewMode] = useState<ViewMode>('endOfMonth');
 
-  const { data: employees, isLoading, isError, error } = useExecutiveSummaryData();
+  const { data: employees, isLoading } = useExecutiveSummaryData();
 
   const selectedDate = new Date(selectedYear, selectedMonth, 1);
 
@@ -64,25 +64,6 @@ const ExecutiveSummary = () => {
     );
   }
 
-  if (isError) {
-    const message = error instanceof Error && error.message === 'AUTH_REQUIRED'
-      ? 'Your session has expired. Please sign in again.'
-      : 'Could not load employee data. Please refresh and try again.';
-
-    return (
-      <DashboardLayout>
-        <div className="space-y-3">
-          <h1 className="text-3xl font-bold">Executive Summary</h1>
-          <div className="rounded-lg border bg-card p-4 text-card-foreground">
-            <div className="font-medium">{message}</div>
-            <div className="mt-1 text-sm text-muted-foreground">
-              If you just logged in, refresh this page.
-            </div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
   return (
     <DashboardLayout>
       <div className="space-y-6">

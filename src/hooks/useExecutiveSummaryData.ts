@@ -20,12 +20,6 @@ export const useExecutiveSummaryData = () => {
   return useQuery({
     queryKey: ['executive-summary-employees'],
     queryFn: async () => {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-      if (!sessionData.session) {
-        throw new Error('AUTH_REQUIRED');
-      }
-
       const { data, error } = await supabase
         .from('employees')
         .select('id, name, empl_no, level, pod, doj, date_of_exit, status, gender')
@@ -123,17 +117,6 @@ export const getLevelHeadcount = (
 ): number => {
   return employees.filter(
     emp => emp.level === level && isActiveAtEndOfMonth(emp, monthDate)
-  ).length;
-};
-
-export const getLevelHeadcountPreviousMonth = (
-  employees: Employee[],
-  monthDate: Date,
-  level: string
-): number => {
-  const previousMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1);
-  return employees.filter(
-    emp => emp.level === level && isActiveAtEndOfMonth(emp, previousMonth)
   ).length;
 };
 
