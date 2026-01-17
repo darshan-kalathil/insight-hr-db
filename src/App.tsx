@@ -11,6 +11,7 @@ import Salary from "./pages/Salary";
 import AdminConsole from "./pages/AdminConsole";
 import LeaveAttendance from "./pages/LeaveAttendance";
 import DataUpload from "./pages/DataUpload";
+import ExecutiveSummary from "./pages/ExecutiveSummary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/executive-summary" element={<ProtectedRoute><ExecutiveSummary /></ProtectedRoute>} />
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/leave-attendance" element={<ProtectedRoute><LeaveAttendance /></ProtectedRoute>} />
