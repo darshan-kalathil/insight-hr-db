@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { format, lastDayOfMonth } from 'date-fns';
 import {
   Table,
@@ -26,19 +25,21 @@ import {
   getAdditionsUpToDate,
   getExitsUpToDate,
 } from '@/hooks/useExecutiveSummaryData';
-
-type ViewMode = 'endOfMonth' | 'asOfToday';
+import { ViewMode } from '@/pages/ExecutiveSummary';
 
 interface ExecutiveSummaryTableProps {
   employees: Employee[];
   selectedMonth: Date;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 export const ExecutiveSummaryTable = ({
   employees,
   selectedMonth,
+  viewMode,
+  onViewModeChange,
 }: ExecutiveSummaryTableProps) => {
-  const [viewMode, setViewMode] = useState<ViewMode>('endOfMonth');
   const today = new Date();
   
   const lastDay = lastDayOfMonth(selectedMonth);
@@ -79,7 +80,7 @@ export const ExecutiveSummaryTable = ({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle>Level-wise Headcount</CardTitle>
-        <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
+        <Select value={viewMode} onValueChange={(value: ViewMode) => onViewModeChange(value)}>
           <SelectTrigger className="w-[160px]">
             <SelectValue />
           </SelectTrigger>
