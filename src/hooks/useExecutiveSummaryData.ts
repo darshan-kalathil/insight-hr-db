@@ -13,6 +13,7 @@ export interface Employee {
   doj: string;
   date_of_exit: string | null;
   status: string;
+  gender: string | null;
 }
 
 export const useExecutiveSummaryData = () => {
@@ -21,7 +22,7 @@ export const useExecutiveSummaryData = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employees')
-        .select('id, name, empl_no, level, pod, doj, date_of_exit, status')
+        .select('id, name, empl_no, level, pod, doj, date_of_exit, status, gender')
         .order('name');
 
       if (error) throw error;
