@@ -134,7 +134,7 @@ export const LevelHeadcountBarChart = ({
 
   return (
     <div className="mb-4">
-      <ResponsiveContainer width="100%" height={160}>
+      <ResponsiveContainer width="100%" height={220}>
         <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis 
@@ -149,6 +149,7 @@ export const LevelHeadcountBarChart = ({
             ticks={ticks}
             domain={[0, maxTick]}
             allowDecimals={false}
+            interval={0}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
           <Bar 
