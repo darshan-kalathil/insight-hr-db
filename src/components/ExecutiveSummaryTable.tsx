@@ -25,6 +25,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  Cell,
+  ReferenceLine,
 } from 'recharts';
 import {
   LEVELS,
@@ -46,6 +48,25 @@ interface ExecutiveSummaryTableProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
 }
+
+// Custom shape for outlined exit bars
+const OutlinedBar = (props: any) => {
+  const { x, y, width, height, fill } = props;
+  if (!height || height <= 0) return null;
+  
+  return (
+    <rect
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      fill="transparent"
+      stroke={fill}
+      strokeWidth={2}
+      strokeDasharray="4 2"
+    />
+  );
+};
 
 export const ExecutiveSummaryTable = ({
   employees,
@@ -77,15 +98,16 @@ export const ExecutiveSummaryTable = ({
     const levelAdditions = additions.filter(emp => emp.level === level).length;
     const levelExits = exits.filter(emp => emp.level === level).length;
     const retained = previousMonthHeadcount - levelExits;
+    const active = isEndOfMonth
+      ? getLevelHeadcount(employees, selectedMonth, level)
+      : getLevelHeadcountAsOfDate(employees, today, level);
     
     return {
       level,
-      active: isEndOfMonth
-        ? getLevelHeadcount(employees, selectedMonth, level)
-        : getLevelHeadcountAsOfDate(employees, today, level),
+      active,
       additions: levelAdditions,
       exits: levelExits,
-      retained: Math.max(0, retained), // Ensure non-negative
+      retained: Math.max(0, retained),
       previousMonthHeadcount,
     };
   });
@@ -99,13 +121,20 @@ export const ExecutiveSummaryTable = ({
     { active: 0, additions: 0, exits: 0 }
   );
 
-  // Chart data for stacked bar
+  // Chart data: bar height = retained + additions (= active employees)
+  // Exits shown as outlined bars below the main bar to show attrition
   const chartData = levelData.map(row => ({
     level: row.level,
     retained: row.retained,
-    exits: row.exits,
     additions: row.additions,
+    negativeExits: row.exits > 0 ? -row.exits : 0, // Negative value for exits below zero line
+    exits: row.exits,
+    active: row.active,
   }));
+
+  // Calculate domain for Y axis to accommodate negative exits
+  const maxActive = Math.max(...chartData.map(d => d.retained + d.additions));
+  const minExits = Math.min(...chartData.map(d => d.negativeExits));
 
   return (
     <div className="flip-card" style={{ perspective: '1000px' }}>
@@ -142,10 +171,17 @@ export const ExecutiveSummaryTable = ({
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <BarChart 
+                  data={chartData} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="level" className="text-xs" />
-                  <YAxis className="text-xs" />
+                  <YAxis 
+                    className="text-xs" 
+                    domain={[minExits - 1, maxActive + 2]}
+                  />
+                  <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: 'hsl(var(--background))',
@@ -155,25 +191,36 @@ export const ExecutiveSummaryTable = ({
                     formatter={(value: number, name: string) => {
                       const labels: Record<string, string> = {
                         retained: 'Retained',
-                        exits: 'Exits',
+                        negativeExits: 'Exits',
                         additions: 'Additions',
                       };
-                      return [value, labels[name] || name];
+                      // Show absolute value for exits
+                      const displayValue = name === 'negativeExits' ? Math.abs(value) : value;
+                      return [displayValue, labels[name] || name];
                     }}
                   />
                   <Legend
                     formatter={(value: string) => {
                       const labels: Record<string, string> = {
                         retained: 'Retained',
-                        exits: 'Exits',
+                        negativeExits: 'Exits',
                         additions: 'Additions',
                       };
                       return labels[value] || value;
                     }}
                   />
-                  <Bar dataKey="retained" stackId="a" fill="#93C5FD" name="retained" />
-                  <Bar dataKey="exits" stackId="a" fill="#EF4444" name="exits" />
-                  <Bar dataKey="additions" stackId="a" fill="#22C55E" name="additions" />
+                  {/* Main bar: retained (bottom) + additions (green cap on top) */}
+                  <Bar dataKey="retained" stackId="main" fill="#93C5FD" name="retained" />
+                  <Bar dataKey="additions" stackId="main" fill="#22C55E" name="additions" />
+                  {/* Exits shown as outlined bars below the zero line */}
+                  <Bar 
+                    dataKey="negativeExits" 
+                    fill="transparent"
+                    stroke="#EF4444"
+                    strokeWidth={2}
+                    name="negativeExits"
+                    shape={OutlinedBar}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
