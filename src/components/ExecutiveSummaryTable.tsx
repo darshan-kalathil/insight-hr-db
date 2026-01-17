@@ -108,9 +108,9 @@ export const ExecutiveSummaryTable = ({
   }));
 
   return (
-    <div className="flip-card" style={{ perspective: '1000px' }}>
+    <div className="flip-card relative" style={{ perspective: '1000px', minHeight: '420px' }}>
       <div
-        className="flip-card-inner transition-transform duration-500"
+        className="flip-card-inner transition-transform duration-500 w-full h-full"
         style={{
           transformStyle: 'preserve-3d',
           transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
@@ -118,7 +118,7 @@ export const ExecutiveSummaryTable = ({
       >
         {/* Front - Stacked Bar Chart (Default) */}
         <Card
-          className="flip-card-front"
+          className="flip-card-front absolute inset-0"
           style={{ backfaceVisibility: 'hidden' }}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
