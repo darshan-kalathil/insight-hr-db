@@ -46,6 +46,20 @@ export const isActiveAtEndOfMonth = (employee: Employee, monthDate: Date): boole
   return exitDate > endOfMonthDate;
 };
 
+export const isActiveAsOfDate = (employee: Employee, asOfDate: Date): boolean => {
+  const doj = new Date(employee.doj);
+  const exitDate = employee.date_of_exit ? new Date(employee.date_of_exit) : null;
+
+  // Employee must have joined on or before the given date
+  if (doj > asOfDate) return false;
+
+  // If no exit date, employee is still active
+  if (!exitDate) return true;
+
+  // If exit date is after the given date, employee was active
+  return exitDate > asOfDate;
+};
+
 export const getAdditionsInMonth = (employees: Employee[], monthDate: Date): Employee[] => {
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
@@ -101,7 +115,8 @@ export const getHeadcountTrend = (
   employees: Employee[],
   fyStart: Date,
   fyEnd: Date,
-  selectedLevels: string[]
+  selectedLevels: string[],
+  currentMonthMode: 'endOfMonth' | 'asOfToday' = 'endOfMonth'
 ) => {
   const months: { 
     month: string; 
@@ -109,18 +124,29 @@ export const getHeadcountTrend = (
     projection?: number; 
     fullDate: Date; 
     isProjection: boolean;
-    isConnector?: boolean; // Used to hide from tooltip
+    isConnector?: boolean;
+    isCurrentMonth?: boolean;
   }[] = [];
   const monthNames = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
   const today = new Date();
+  const currentMonthStart = startOfMonth(today);
 
-  // Find the last historical month index
+  // Find the last historical month index (completed months)
   let lastHistoricalIdx = -1;
+  let currentMonthIdx = -1;
+  
   for (let i = 0; i < 12; i++) {
     const monthIndex = (3 + i) % 12;
     const year = i < 9 ? fyStart.getFullYear() : fyStart.getFullYear() + 1;
     const monthDate = new Date(year, monthIndex, 1);
     const endOfMonthDate = lastDayOfMonth(monthDate);
+    
+    // Check if this is the current month
+    if (monthDate.getMonth() === currentMonthStart.getMonth() && 
+        monthDate.getFullYear() === currentMonthStart.getFullYear()) {
+      currentMonthIdx = i;
+    }
+    
     if (endOfMonthDate <= today) {
       lastHistoricalIdx = i;
     }
@@ -132,26 +158,49 @@ export const getHeadcountTrend = (
     const monthDate = new Date(year, monthIndex, 1);
     const endOfMonthDate = lastDayOfMonth(monthDate);
 
+    const isCurrentMonth = i === currentMonthIdx;
     const isProjection = endOfMonthDate > today;
 
-    const headcount = employees.filter(emp => {
-      if (!selectedLevels.includes(emp.level)) return false;
-      return isActiveAtEndOfMonth(emp, monthDate);
-    }).length;
+    let headcount: number;
+    
+    if (isCurrentMonth && currentMonthMode === 'asOfToday') {
+      // For current month in "as of today" mode, count active as of today
+      headcount = employees.filter(emp => {
+        if (!selectedLevels.includes(emp.level)) return false;
+        return isActiveAsOfDate(emp, today);
+      }).length;
+    } else {
+      // Default: end of month calculation
+      headcount = employees.filter(emp => {
+        if (!selectedLevels.includes(emp.level)) return false;
+        return isActiveAtEndOfMonth(emp, monthDate);
+      }).length;
+    }
 
-    if (isProjection) {
+    if (isCurrentMonth) {
+      // Current month - show as historical (actual/as-of-today) with connector
+      months.push({
+        month: monthNames[i],
+        headcount,
+        projection: headcount, // Connector point for projection line
+        fullDate: monthDate,
+        isProjection: false,
+        isConnector: true,
+        isCurrentMonth: true,
+      });
+    } else if (isProjection) {
       months.push({
         month: monthNames[i],
         projection: headcount,
         fullDate: monthDate,
         isProjection: true,
       });
-    } else if (i === lastHistoricalIdx) {
-      // Last historical month - include projection value to connect lines
+    } else if (i === lastHistoricalIdx && currentMonthIdx === -1) {
+      // Last historical month (only if current month is not in FY)
       months.push({
         month: monthNames[i],
         headcount,
-        projection: headcount, // Connector point
+        projection: headcount,
         fullDate: monthDate,
         isProjection: false,
         isConnector: true,
