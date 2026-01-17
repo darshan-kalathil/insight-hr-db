@@ -34,8 +34,8 @@ const CustomTooltip = ({ active, payload }: any) => {
       <div className="bg-background border rounded-lg shadow-lg p-3 text-sm">
         <p className="font-semibold mb-1">{data.level}</p>
         <p>Headcount: <span className="font-medium">{data.total}</span></p>
-        <p className="text-green-600">Additions: <span className="font-medium">+{data.additions}</span></p>
-        <p className="text-red-600">Exits: <span className="font-medium">-{data.exits}</span></p>
+        <p className="text-green-600">Additions: <span className="font-medium">{data.additions > 0 ? `+${data.additions}` : data.additions}</span></p>
+        <p className="text-red-600">Exits: <span className="font-medium">{data.exits > 0 ? `-${data.exits}` : data.exits}</span></p>
       </div>
     );
   }
