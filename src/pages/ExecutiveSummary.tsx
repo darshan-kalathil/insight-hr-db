@@ -3,6 +3,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { ExecutiveSummaryTable } from '@/components/ExecutiveSummaryTable';
 import { AdditionsExitsTable } from '@/components/AdditionsExitsTable';
 import { HeadcountTrendChart } from '@/components/HeadcountTrendChart';
+import { HeadcountStatsCards } from '@/components/HeadcountStatsCards';
 import { useExecutiveSummaryData } from '@/hooks/useExecutiveSummaryData';
 import {
   Select,
@@ -99,10 +100,16 @@ const ExecutiveSummary = () => {
           </Select>
         </div>
 
-        <ExecutiveSummaryTable
-          employees={employees || []}
-          selectedMonth={selectedDate}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
+          <ExecutiveSummaryTable
+            employees={employees || []}
+            selectedMonth={selectedDate}
+          />
+          <HeadcountStatsCards
+            employees={employees || []}
+            selectedMonth={selectedDate}
+          />
+        </div>
 
         <AdditionsExitsTable
           employees={employees || []}
