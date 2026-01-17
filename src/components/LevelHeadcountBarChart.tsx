@@ -83,10 +83,11 @@ export const LevelHeadcountBarChart = ({
     return null;
   }
 
-  // Calculate max value for dynamic tick configuration
+  // Generate explicit tick values at intervals of 2
   const maxValue = Math.max(...chartData.map(item => item.total));
   const tickInterval = 2;
-  const tickCount = Math.ceil(maxValue / tickInterval) + 1;
+  const maxTick = Math.ceil(maxValue / tickInterval) * tickInterval;
+  const ticks = Array.from({ length: maxTick / tickInterval + 1 }, (_, i) => i * tickInterval);
 
   // Custom bar with cap
   const renderCustomBar = (props: any) => {
@@ -145,8 +146,8 @@ export const LevelHeadcountBarChart = ({
             axisLine={false}
             tickLine={false}
             width={30}
-            tickCount={tickCount}
-            domain={[0, 'auto']}
+            ticks={ticks}
+            domain={[0, maxTick]}
             allowDecimals={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
