@@ -26,7 +26,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && !isResettingPassword) {
-      navigate('/');
+      navigate('/executive-summary');
     }
   }, [user, navigate, isResettingPassword]);
 
@@ -131,7 +131,7 @@ const Auth = () => {
           title: 'Password updated',
           description: 'Your password has been successfully updated.'
         });
-        navigate('/');
+        navigate('/executive-summary');
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
