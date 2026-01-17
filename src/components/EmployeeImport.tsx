@@ -107,9 +107,16 @@ export const EmployeeImport = ({
               throw new Error(`Missing required fields for new employee: ${missingFields.join(', ')}`);
             }
             
-            // Set defaults for optional fields if not provided
-            if (!employeeData.status) employeeData.status = 'Active';
+          // Set defaults for optional fields if not provided
             if (!employeeData.type) employeeData.type = 'EMP';
+            
+            // Auto-set status based on DOJ
+            if (!employeeData.status) {
+              const dojDate = new Date(employeeData.doj);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              employeeData.status = dojDate > today ? 'To Be Onboarded' : 'Active';
+            }
             
             const {
               error
