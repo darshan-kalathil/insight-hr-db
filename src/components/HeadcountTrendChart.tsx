@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -18,7 +18,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { ChevronDown } from 'lucide-react';
-import { format } from 'date-fns';
 import {
   LEVELS,
   Employee,
@@ -36,19 +35,14 @@ export const HeadcountTrendChart = ({
   selectedMonth,
 }: HeadcountTrendChartProps) => {
   const [selectedLevels, setSelectedLevels] = useState<string[]>([...LEVELS]);
-  const [currentMonthMode, setCurrentMonthMode] = useState<'endOfMonth' | 'asOfToday'>('endOfMonth');
 
   const fyRange = getFYRange(selectedMonth);
   const trendData = getHeadcountTrend(
     employees,
     fyRange.start,
     fyRange.end,
-    selectedLevels,
-    currentMonthMode
+    selectedLevels
   );
-
-  const today = new Date();
-  const todayFormatted = format(today, 'd MMM yyyy');
 
   const handleLevelToggle = (level: string) => {
     setSelectedLevels(prev =>
@@ -73,26 +67,11 @@ export const HeadcountTrendChart = ({
     return `${selectedLevels.length} Levels`;
   };
 
-  const toggleCurrentMonthMode = () => {
-    setCurrentMonthMode(prev => prev === 'endOfMonth' ? 'asOfToday' : 'endOfMonth');
-  };
-
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Headcount Trend ({fyRange.label})</CardTitle>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={toggleCurrentMonthMode}
-            className="text-xs"
-          >
-            {currentMonthMode === 'endOfMonth' 
-              ? 'Showing: End of Month' 
-              : `Showing: As on ${todayFormatted}`}
-          </Button>
-          <Popover>
+        <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-[150px] justify-between">
               {getLevelFilterLabel()}
@@ -139,7 +118,6 @@ export const HeadcountTrendChart = ({
             </div>
           </PopoverContent>
         </Popover>
-        </div>
       </CardHeader>
       <CardContent>
         {trendData.length > 0 ? (
