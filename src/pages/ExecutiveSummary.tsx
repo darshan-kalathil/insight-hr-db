@@ -113,6 +113,7 @@ const ExecutiveSummary = () => {
           <HeadcountStatsCards
             employees={employees || []}
             selectedMonth={selectedDate}
+            viewMode={viewMode}
           />
         </div>
 
