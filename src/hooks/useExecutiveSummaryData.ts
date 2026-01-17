@@ -46,6 +46,49 @@ export const isActiveAtEndOfMonth = (employee: Employee, monthDate: Date): boole
   return exitDate > endOfMonthDate;
 };
 
+export const isActiveAsOfDate = (employee: Employee, asOfDate: Date): boolean => {
+  const doj = new Date(employee.doj);
+  const exitDate = employee.date_of_exit ? new Date(employee.date_of_exit) : null;
+
+  // Employee must have joined on or before the given date
+  if (doj > asOfDate) return false;
+
+  // If no exit date, employee is still active
+  if (!exitDate) return true;
+
+  // If exit date is after the given date, employee is still active
+  return exitDate > asOfDate;
+};
+
+export const getLevelHeadcountAsOfDate = (
+  employees: Employee[],
+  asOfDate: Date,
+  level: string
+): number => {
+  return employees.filter(
+    emp => emp.level === level && isActiveAsOfDate(emp, asOfDate)
+  ).length;
+};
+
+export const getAdditionsUpToDate = (employees: Employee[], monthDate: Date, upToDate: Date): Employee[] => {
+  const monthStart = startOfMonth(monthDate);
+
+  return employees.filter(emp => {
+    const doj = new Date(emp.doj);
+    return doj >= monthStart && doj <= upToDate;
+  });
+};
+
+export const getExitsUpToDate = (employees: Employee[], monthDate: Date, upToDate: Date): Employee[] => {
+  const monthStart = startOfMonth(monthDate);
+
+  return employees.filter(emp => {
+    if (!emp.date_of_exit) return false;
+    const exitDate = new Date(emp.date_of_exit);
+    return exitDate >= monthStart && exitDate <= upToDate;
+  });
+};
+
 export const getAdditionsInMonth = (employees: Employee[], monthDate: Date): Employee[] => {
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
