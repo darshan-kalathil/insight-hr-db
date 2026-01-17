@@ -124,7 +124,7 @@ export const HeadcountTrendChart = ({
             <LineChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis domain={[0, 'auto']} />
+              <YAxis domain={['auto', 'auto']} />
               <Tooltip
                 formatter={(value: number) => [value, 'Headcount']}
                 labelFormatter={(label) => `Month: ${label}`}
