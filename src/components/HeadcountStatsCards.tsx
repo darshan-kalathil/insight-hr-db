@@ -153,9 +153,9 @@ export const HeadcountStatsCards = ({
         </CardHeader>
         <CardContent>
           <div className={`text-2xl font-bold ${getMomColor()}`}>
-            {momChange > 0 ? '+' : ''}{momChange}
-            <span className="text-base font-normal ml-2">
-              ({momChange >= 0 ? '+' : ''}{momPercentChange}%)
+            {momChange >= 0 ? '+' : ''}{momPercentChange}%
+            <span className="text-sm font-normal text-muted-foreground ml-2">
+              ({momChange > 0 ? '+' : ''}{momChange})
             </span>
           </div>
           <div className="text-xs text-muted-foreground mt-1">
