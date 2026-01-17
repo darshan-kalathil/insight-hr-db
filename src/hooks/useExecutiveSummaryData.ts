@@ -120,6 +120,17 @@ export const getLevelHeadcount = (
   ).length;
 };
 
+export const getLevelHeadcountPreviousMonth = (
+  employees: Employee[],
+  monthDate: Date,
+  level: string
+): number => {
+  const previousMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1);
+  return employees.filter(
+    emp => emp.level === level && isActiveAtEndOfMonth(emp, previousMonth)
+  ).length;
+};
+
 export const getFYRange = (selectedDate: Date) => {
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth();
