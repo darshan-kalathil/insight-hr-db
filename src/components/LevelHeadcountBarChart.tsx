@@ -83,6 +83,11 @@ export const LevelHeadcountBarChart = ({
     return null;
   }
 
+  // Calculate max value for dynamic tick configuration
+  const maxValue = Math.max(...chartData.map(item => item.total));
+  const tickInterval = 2;
+  const tickCount = Math.ceil(maxValue / tickInterval) + 1;
+
   // Custom bar with cap
   const renderCustomBar = (props: any) => {
     const { x, y, width, height, payload } = props;
@@ -127,9 +132,9 @@ export const LevelHeadcountBarChart = ({
   };
 
   return (
-    <div className="mb-6">
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 5 }}>
+    <div className="mb-4">
+      <ResponsiveContainer width="100%" height={160}>
+        <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis 
             dataKey="level" 
@@ -139,7 +144,10 @@ export const LevelHeadcountBarChart = ({
           <YAxis 
             axisLine={false}
             tickLine={false}
-            width={40}
+            width={30}
+            tickCount={tickCount}
+            domain={[0, 'auto']}
+            allowDecimals={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
           <Bar 
