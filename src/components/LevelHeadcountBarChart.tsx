@@ -83,9 +83,9 @@ export const LevelHeadcountBarChart = ({
     return null;
   }
 
-  // Generate explicit tick values at intervals of 2
+  // Generate explicit tick values at intervals of 5
   const maxValue = Math.max(...chartData.map(item => item.total));
-  const tickInterval = 2;
+  const tickInterval = 5;
   const maxTick = Math.ceil(maxValue / tickInterval) * tickInterval;
   const ticks = Array.from({ length: maxTick / tickInterval + 1 }, (_, i) => i * tickInterval);
 
