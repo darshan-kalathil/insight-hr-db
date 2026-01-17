@@ -22,7 +22,7 @@ export const HeadcountStatsCards = ({
   employees,
   selectedMonth,
 }: HeadcountStatsCardsProps) => {
-  const [tenureMetric, setTenureMetric] = useState<TenureMetric>('median');
+  const [tenureMetric, setTenureMetric] = useState<TenureMetric>('lessThanOneYear');
   const lastDay = lastDayOfMonth(selectedMonth);
   
   // Get active employees at end of month
