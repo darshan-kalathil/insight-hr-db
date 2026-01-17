@@ -1,17 +1,28 @@
+import { useState } from 'react';
 import { lastDayOfMonth, differenceInDays, subMonths } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Employee, isActiveAtEndOfMonth } from '@/hooks/useExecutiveSummaryData';
 import { Users, Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface HeadcountStatsCardsProps {
   employees: Employee[];
   selectedMonth: Date;
 }
 
+type TenureMetric = 'median' | 'lessThanOneYear';
+
 export const HeadcountStatsCards = ({
   employees,
   selectedMonth,
 }: HeadcountStatsCardsProps) => {
+  const [tenureMetric, setTenureMetric] = useState<TenureMetric>('median');
   const lastDay = lastDayOfMonth(selectedMonth);
   
   // Get active employees at end of month
@@ -54,6 +65,12 @@ export const HeadcountStatsCards = ({
   };
 
   const medianTenure = getMedian(tenures);
+
+  // Percentage with tenure less than 1 year
+  const lessThanOneYearCount = tenures.filter(t => t < 1).length;
+  const lessThanOneYearPercent = totalActive > 0
+    ? ((lessThanOneYearCount / totalActive) * 100).toFixed(1)
+    : '0.0';
 
   // Month-on-month growth calculation
   const previousMonth = subMonths(selectedMonth, 1);
@@ -125,18 +142,35 @@ export const HeadcountStatsCards = ({
         </CardContent>
       </Card>
 
-      {/* Median Tenure Card */}
+      {/* Tenure Card */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            Median Tenure
-          </CardTitle>
+            <Select value={tenureMetric} onValueChange={(value: TenureMetric) => setTenureMetric(value)}>
+              <SelectTrigger className="h-auto border-0 p-0 text-base font-semibold shadow-none focus:ring-0 w-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="median">Median Tenure</SelectItem>
+                <SelectItem value="lessThanOneYear">Tenure &lt; 1 Year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            {medianTenure.toFixed(1)} <span className="text-base font-normal text-muted-foreground">years</span>
-          </div>
+          {tenureMetric === 'median' ? (
+            <div className="text-2xl font-bold">
+              {medianTenure.toFixed(1)} <span className="text-base font-normal text-muted-foreground">years</span>
+            </div>
+          ) : (
+            <div className="text-2xl font-bold">
+              {lessThanOneYearPercent}%
+              <span className="text-base font-normal text-muted-foreground ml-2">
+                ({lessThanOneYearCount} of {totalActive})
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
