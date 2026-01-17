@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import { lastDayOfMonth } from 'date-fns';
 import {
   LEVELS,
@@ -18,6 +18,30 @@ interface LevelHeadcountBarChartProps {
   viewMode: ViewMode;
 }
 
+interface ChartDataItem {
+  level: string;
+  base: number;
+  additions: number;
+  exits: number;
+  netChange: number;
+  total: number;
+}
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload as ChartDataItem;
+    return (
+      <div className="bg-background border rounded-lg shadow-lg p-3 text-sm">
+        <p className="font-semibold mb-1">{data.level}</p>
+        <p>Headcount: <span className="font-medium">{data.total}</span></p>
+        <p className="text-green-600">Additions: <span className="font-medium">+{data.additions}</span></p>
+        <p className="text-red-600">Exits: <span className="font-medium">-{data.exits}</span></p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const LevelHeadcountBarChart = ({
   employees,
   selectedMonth,
@@ -36,7 +60,7 @@ export const LevelHeadcountBarChart = ({
     : getExitsUpToDate(employees, selectedMonth, today);
 
   // Build chart data for each level
-  const chartData = LEVELS.map(level => {
+  const chartData: ChartDataItem[] = LEVELS.map(level => {
     const active = isEndOfMonth
       ? getLevelHeadcount(employees, selectedMonth, level)
       : getLevelHeadcountAsOfDate(employees, today, level);
@@ -47,15 +71,13 @@ export const LevelHeadcountBarChart = ({
 
     return {
       level,
-      // Base headcount (without the net change visual)
       base: active,
-      // For stacking: we show positive change as green cap, negative as red cap
-      positiveChange: netChange > 0 ? netChange : 0,
-      negativeChange: netChange < 0 ? Math.abs(netChange) : 0,
+      additions: levelAdditions,
+      exits: levelExits,
       netChange,
       total: active,
     };
-  }).filter(item => item.base > 0 || item.positiveChange > 0 || item.negativeChange > 0);
+  }).filter(item => item.base > 0 || item.additions > 0);
 
   if (chartData.length === 0) {
     return null;
@@ -65,10 +87,9 @@ export const LevelHeadcountBarChart = ({
   const renderCustomBar = (props: any) => {
     const { x, y, width, height, payload } = props;
     const netChange = payload.netChange;
-    const capHeight = Math.min(8, height * 0.15); // Cap is 15% of bar or max 8px
+    const capHeight = Math.min(8, height * 0.15);
     
     if (netChange === 0) {
-      // No change - just render the base bar
       return (
         <rect
           x={x}
@@ -81,12 +102,10 @@ export const LevelHeadcountBarChart = ({
       );
     }
 
-    // Render bar with colored cap
     const capColor = netChange > 0 ? 'hsl(142, 76%, 36%)' : 'hsl(0, 84%, 60%)';
     
     return (
       <g>
-        {/* Main bar */}
         <rect
           x={x}
           y={y + capHeight}
@@ -95,7 +114,6 @@ export const LevelHeadcountBarChart = ({
           fill="hsl(var(--primary))"
           rx={2}
         />
-        {/* Cap */}
         <rect
           x={x}
           y={y}
@@ -123,20 +141,12 @@ export const LevelHeadcountBarChart = ({
             tickLine={false}
             width={40}
           />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }} />
           <Bar 
             dataKey="total" 
             shape={renderCustomBar}
             isAnimationActive={false}
-          >
-            <LabelList 
-              dataKey="total" 
-              position="bottom" 
-              offset={-20}
-              fill="hsl(var(--foreground))"
-              fontSize={12}
-              fontWeight={600}
-            />
-          </Bar>
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
