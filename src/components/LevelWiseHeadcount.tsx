@@ -53,7 +53,7 @@ export const LevelWiseHeadcount = ({ levelData, periodFrom, periodTo }: LevelWis
                 {chartData.map(({ level, count }) => (
                   <TableRow key={level}>
                     <TableCell className="font-medium">{level}</TableCell>
-                    <TableCell className="text-right">{count}</TableCell>
+                    <TableCell className="text-right">{count === 0 ? '-' : count}</TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="font-bold border-t-2">
