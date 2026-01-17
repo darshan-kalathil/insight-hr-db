@@ -1,7 +1,7 @@
-import { lastDayOfMonth, differenceInDays } from 'date-fns';
+import { lastDayOfMonth, differenceInDays, subMonths } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Employee, isActiveAtEndOfMonth } from '@/hooks/useExecutiveSummaryData';
-import { Users, Clock } from 'lucide-react';
+import { Users, Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface HeadcountStatsCardsProps {
   employees: Employee[];
@@ -55,6 +55,29 @@ export const HeadcountStatsCards = ({
 
   const medianTenure = getMedian(tenures);
 
+  // Month-on-month growth calculation
+  const previousMonth = subMonths(selectedMonth, 1);
+  const previousMonthActive = employees.filter(emp => 
+    isActiveAtEndOfMonth(emp, previousMonth)
+  ).length;
+
+  const momChange = totalActive - previousMonthActive;
+  const momPercentChange = previousMonthActive > 0
+    ? ((momChange / previousMonthActive) * 100).toFixed(1)
+    : totalActive > 0 ? '100.0' : '0.0';
+
+  const getMomIcon = () => {
+    if (momChange > 0) return <TrendingUp className="h-4 w-4 text-green-600" />;
+    if (momChange < 0) return <TrendingDown className="h-4 w-4 text-red-600" />;
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
+  };
+
+  const getMomColor = () => {
+    if (momChange > 0) return 'text-green-600';
+    if (momChange < 0) return 'text-red-600';
+    return 'text-muted-foreground';
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* Gender Split Card */}
@@ -92,6 +115,27 @@ export const HeadcountStatsCards = ({
         <CardContent>
           <div className="text-2xl font-bold">
             {medianTenure.toFixed(1)} <span className="text-base font-normal text-muted-foreground">years</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* MoM Growth Card */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            {getMomIcon()}
+            MoM Growth
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${getMomColor()}`}>
+            {momChange > 0 ? '+' : ''}{momChange}
+            <span className="text-base font-normal ml-2">
+              ({momChange >= 0 ? '+' : ''}{momPercentChange}%)
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            vs {previousMonthActive} last month
           </div>
         </CardContent>
       </Card>
