@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -126,16 +127,37 @@ export const HeadcountTrendChart = ({
               <XAxis dataKey="month" />
               <YAxis domain={['auto', 'auto']} />
               <Tooltip
-                formatter={(value: number) => [value, 'Headcount']}
+                formatter={(value: number, name: string) => {
+                  const label = name === 'projection' ? 'Projected Headcount' : 'Headcount';
+                  return [value, label];
+                }}
                 labelFormatter={(label) => `Month: ${label}`}
               />
+              <Legend 
+                formatter={(value) => value === 'projection' ? 'Projected' : 'Actual'}
+              />
+              {/* Historical data line */}
               <Line
                 type="monotone"
                 dataKey="headcount"
+                name="headcount"
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
-                dot={{ fill: 'hsl(var(--primary))' }}
+                dot={{ fill: 'hsl(var(--primary))', r: 4 }}
                 activeDot={{ r: 6 }}
+                connectNulls={false}
+              />
+              {/* Projection data line */}
+              <Line
+                type="monotone"
+                dataKey="projection"
+                name="projection"
+                stroke="#000000"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ fill: '#000000', r: 4 }}
+                activeDot={{ r: 6 }}
+                connectNulls={false}
               />
             </LineChart>
           </ResponsiveContainer>

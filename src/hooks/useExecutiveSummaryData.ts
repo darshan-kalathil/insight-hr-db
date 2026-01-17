@@ -103,30 +103,65 @@ export const getHeadcountTrend = (
   fyEnd: Date,
   selectedLevels: string[]
 ) => {
-  const months = [];
+  const months: { 
+    month: string; 
+    headcount?: number; 
+    projection?: number; 
+    fullDate: Date; 
+    isProjection: boolean;
+  }[] = [];
   const monthNames = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+  const today = new Date();
+
+  // Find the last historical month index for connecting the lines
+  let lastHistoricalIdx = -1;
+  for (let i = 0; i < 12; i++) {
+    const monthIndex = (3 + i) % 12;
+    const year = i < 9 ? fyStart.getFullYear() : fyStart.getFullYear() + 1;
+    const monthDate = new Date(year, monthIndex, 1);
+    const endOfMonthDate = lastDayOfMonth(monthDate);
+    if (endOfMonthDate <= today) {
+      lastHistoricalIdx = i;
+    }
+  }
 
   for (let i = 0; i < 12; i++) {
-    const monthIndex = (3 + i) % 12; // Start from April (index 3)
+    const monthIndex = (3 + i) % 12;
     const year = i < 9 ? fyStart.getFullYear() : fyStart.getFullYear() + 1;
     const monthDate = new Date(year, monthIndex, 1);
     const endOfMonthDate = lastDayOfMonth(monthDate);
 
-    // Only include months up to current date
-    if (endOfMonthDate > new Date()) {
-      break;
-    }
+    const isProjection = endOfMonthDate > today;
 
     const headcount = employees.filter(emp => {
       if (!selectedLevels.includes(emp.level)) return false;
       return isActiveAtEndOfMonth(emp, monthDate);
     }).length;
 
-    months.push({
-      month: monthNames[i],
-      headcount,
-      fullDate: monthDate,
-    });
+    // For the last historical month, include both values to connect the lines
+    if (i === lastHistoricalIdx) {
+      months.push({
+        month: monthNames[i],
+        headcount,
+        projection: headcount, // Include projection value to connect
+        fullDate: monthDate,
+        isProjection: false,
+      });
+    } else if (isProjection) {
+      months.push({
+        month: monthNames[i],
+        projection: headcount,
+        fullDate: monthDate,
+        isProjection: true,
+      });
+    } else {
+      months.push({
+        month: monthNames[i],
+        headcount,
+        fullDate: monthDate,
+        isProjection: false,
+      });
+    }
   }
 
   return months;
