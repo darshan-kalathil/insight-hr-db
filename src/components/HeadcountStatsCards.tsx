@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { lastDayOfMonth, differenceInDays, subMonths } from 'date-fns';
+import { lastDayOfMonth, differenceInDays, subMonths, startOfMonth, endOfMonth, getDate, getMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Employee, isActiveAtEndOfMonth } from '@/hooks/useExecutiveSummaryData';
-import { Users, Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Employee, isActiveAtEndOfMonth, isActiveAsOfDate } from '@/hooks/useExecutiveSummaryData';
+import { Users, Clock, TrendingUp, TrendingDown, Minus, Cake } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -10,10 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ViewMode } from '@/pages/ExecutiveSummary';
 
 interface HeadcountStatsCardsProps {
   employees: Employee[];
   selectedMonth: Date;
+  viewMode: ViewMode;
 }
 
 type TenureMetric = 'median' | 'lessThanOneYear';
@@ -21,8 +23,11 @@ type TenureMetric = 'median' | 'lessThanOneYear';
 export const HeadcountStatsCards = ({
   employees,
   selectedMonth,
+  viewMode,
 }: HeadcountStatsCardsProps) => {
   const [tenureMetric, setTenureMetric] = useState<TenureMetric>('lessThanOneYear');
+  const today = new Date();
+  const isEndOfMonth = viewMode === 'endOfMonth';
   const lastDay = lastDayOfMonth(selectedMonth);
   
   // Get active employees at end of month
@@ -94,6 +99,47 @@ export const HeadcountStatsCards = ({
     if (momChange < 0) return 'text-red-600';
     return 'text-muted-foreground';
   };
+
+  // Work Anniversaries calculation
+  const monthStart = startOfMonth(selectedMonth);
+  const cutoffDate = isEndOfMonth ? lastDay : today;
+  const selectedMonthIndex = getMonth(selectedMonth);
+
+  const workAnniversaries = employees
+    .filter(emp => {
+      // Must be active as of the cutoff date
+      const isActive = isEndOfMonth 
+        ? isActiveAtEndOfMonth(emp, selectedMonth) 
+        : isActiveAsOfDate(emp, today);
+      if (!isActive) return false;
+
+      const doj = new Date(emp.doj);
+      const dojMonth = getMonth(doj);
+      const dojDay = getDate(doj);
+
+      // Check if anniversary falls in this month
+      if (dojMonth !== selectedMonthIndex) return false;
+
+      // For "as of today" mode, only include anniversaries up to today
+      if (!isEndOfMonth) {
+        const anniversaryThisYear = new Date(today.getFullYear(), dojMonth, dojDay);
+        if (anniversaryThisYear > today) return false;
+        if (anniversaryThisYear < monthStart) return false;
+      }
+
+      return true;
+    })
+    .map(emp => {
+      const doj = new Date(emp.doj);
+      const referenceYear = isEndOfMonth ? lastDay.getFullYear() : today.getFullYear();
+      const yearsCompleted = referenceYear - doj.getFullYear();
+      return {
+        name: emp.name,
+        years: yearsCompleted,
+      };
+    })
+    .filter(emp => emp.years > 0) // Only show if completing at least 1 year
+    .sort((a, b) => b.years - a.years); // Sort by years descending
 
   return (
     <div className="flex flex-col gap-4">
@@ -170,6 +216,32 @@ export const HeadcountStatsCards = ({
                 ({lessThanOneYearCount} of {totalActive})
               </span>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Work Anniversaries Card */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Cake className="h-4 w-4" />
+            Work Anniversaries
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {workAnniversaries.length > 0 ? (
+            <ul className="space-y-1 text-sm max-h-32 overflow-y-auto">
+              {workAnniversaries.map((emp, idx) => (
+                <li key={idx} className="flex justify-between items-center">
+                  <span className="truncate mr-2">{emp.name}</span>
+                  <span className="text-muted-foreground whitespace-nowrap">
+                    {emp.years} {emp.years === 1 ? 'year' : 'years'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">No anniversaries this month</p>
           )}
         </CardContent>
       </Card>
