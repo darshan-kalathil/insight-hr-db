@@ -109,9 +109,22 @@ export const getHeadcountTrend = (
     projection?: number; 
     fullDate: Date; 
     isProjection: boolean;
+    isConnector?: boolean; // Used to hide from tooltip
   }[] = [];
   const monthNames = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
   const today = new Date();
+
+  // Find the last historical month index
+  let lastHistoricalIdx = -1;
+  for (let i = 0; i < 12; i++) {
+    const monthIndex = (3 + i) % 12;
+    const year = i < 9 ? fyStart.getFullYear() : fyStart.getFullYear() + 1;
+    const monthDate = new Date(year, monthIndex, 1);
+    const endOfMonthDate = lastDayOfMonth(monthDate);
+    if (endOfMonthDate <= today) {
+      lastHistoricalIdx = i;
+    }
+  }
 
   for (let i = 0; i < 12; i++) {
     const monthIndex = (3 + i) % 12;
@@ -132,6 +145,16 @@ export const getHeadcountTrend = (
         projection: headcount,
         fullDate: monthDate,
         isProjection: true,
+      });
+    } else if (i === lastHistoricalIdx) {
+      // Last historical month - include projection value to connect lines
+      months.push({
+        month: monthNames[i],
+        headcount,
+        projection: headcount, // Connector point
+        fullDate: monthDate,
+        isProjection: false,
+        isConnector: true,
       });
     } else {
       months.push({
