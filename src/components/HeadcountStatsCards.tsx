@@ -21,12 +21,12 @@ export const HeadcountStatsCards = ({
   
   const totalActive = activeEmployees.length;
 
-  // Gender split calculation
+  // Gender split calculation (M = Men, F = Women)
   const femaleCount = activeEmployees.filter(
-    emp => emp.gender?.toLowerCase() === 'female'
+    emp => emp.gender?.toUpperCase() === 'F'
   ).length;
   const maleCount = activeEmployees.filter(
-    emp => emp.gender?.toLowerCase() === 'male'
+    emp => emp.gender?.toUpperCase() === 'M'
   ).length;
   
   const femalePercent = totalActive > 0 
