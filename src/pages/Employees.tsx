@@ -176,26 +176,58 @@ const Employees = () => {
     }
   };
 
-  const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.empl_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.official_email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || emp.status === statusFilter;
-    const matchesLevel = levelFilter.length === 0 || levelFilter.includes(emp.level);
-    const matchesPod = podFilter.length === 0 || podFilter.includes(emp.pod);
-    const matchesLocation = locationFilter === 'all' || emp.location === locationFilter;
-    const matchesGender = genderFilter === 'all' || (emp as any).gender === genderFilter;
+  // Helper function to get filtered employees excluding a specific filter
+  const getFilteredEmployeesFor = (excludeFilter: string) => {
+    return employees.filter(emp => {
+      const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.empl_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.official_email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = excludeFilter === 'status' || statusFilter === 'all' || emp.status === statusFilter;
+      const matchesLevel = excludeFilter === 'level' || levelFilter.length === 0 || levelFilter.includes(emp.level);
+      const matchesPod = excludeFilter === 'pod' || podFilter.length === 0 || podFilter.includes(emp.pod);
+      const matchesLocation = excludeFilter === 'location' || locationFilter === 'all' || emp.location === locationFilter;
+      const matchesGender = excludeFilter === 'gender' || genderFilter === 'all' || (emp as any).gender === genderFilter;
+      
+      return matchesSearch && matchesStatus && matchesLevel && matchesPod && matchesLocation && matchesGender;
+    });
+  };
 
-    return matchesSearch && matchesStatus && matchesLevel && matchesPod && matchesLocation && matchesGender;
-  });
+  const filteredEmployees = getFilteredEmployeesFor('none');
 
-  // Get unique values for filters
+  // Get unique values for filters - derived from filtered data to show only relevant options
+  // Status options always come from all employees (it's the primary filter)
   const uniqueStatuses = Array.from(new Set(employees.map(e => e.status)));
-  const uniqueLevels = Array.from(new Set(employees.map(e => e.level)));
-  const uniquePods = Array.from(new Set(employees.map(e => e.pod)));
-  const uniqueLocations = Array.from(new Set(employees.map(e => e.location)));
-  const uniqueGenders = Array.from(new Set(employees.map(e => (e as any).gender).filter(Boolean)));
+  
+  // Other filter options are derived from data filtered by all OTHER active filters
+  const uniqueLevels = Array.from(new Set(getFilteredEmployeesFor('level').map(e => e.level))).sort();
+  const uniquePods = Array.from(new Set(getFilteredEmployeesFor('pod').map(e => e.pod))).sort();
+  const uniqueLocations = Array.from(new Set(getFilteredEmployeesFor('location').map(e => e.location))).sort();
+  const uniqueGenders = Array.from(new Set(getFilteredEmployeesFor('gender').map(e => (e as any).gender).filter(Boolean))).sort();
+
+  // Clear invalid filter selections when they become unavailable
+  useEffect(() => {
+    // Clear location filter if the selected location is no longer available
+    if (locationFilter !== 'all' && !uniqueLocations.includes(locationFilter)) {
+      setLocationFilter('all');
+    }
+    
+    // Clear level filter selections that are no longer available
+    const validLevels = levelFilter.filter(l => uniqueLevels.includes(l));
+    if (validLevels.length !== levelFilter.length) {
+      setLevelFilter(validLevels);
+    }
+    
+    // Clear POD filter selections that are no longer available
+    const validPods = podFilter.filter(p => uniquePods.includes(p));
+    if (validPods.length !== podFilter.length) {
+      setPodFilter(validPods);
+    }
+    
+    // Clear gender filter if selected gender is no longer available
+    if (genderFilter !== 'all' && !uniqueGenders.includes(genderFilter)) {
+      setGenderFilter('all');
+    }
+  }, [statusFilter, employees]);
 
   return (
     <DashboardLayout>
