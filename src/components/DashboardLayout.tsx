@@ -28,12 +28,15 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     }
   };
 
-  const navItems = [
+  const primaryNavItems = [
     { path: '/executive-summary', icon: Briefcase, label: 'Executive Summary' },
+    { path: '/salary', icon: DollarSign, label: 'Salary' },
     { path: '/', icon: Users, label: 'Employees' },
+  ];
+
+  const secondaryNavItems = [
     { path: '/analytics', icon: BarChart3, label: 'Headcount' },
     { path: '/leave-attendance', icon: CalendarClock, label: 'Leave & Attendance' },
-    { path: '/salary', icon: DollarSign, label: 'Salary' },
     { path: '/data-upload', icon: Upload, label: 'Data Upload' },
     { path: '/users', icon: Settings, label: 'Admin Console' }
   ];
@@ -47,7 +50,26 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
         
         <nav className="flex-1 px-4 space-y-2">
-          {navItems.map((item) => {
+          {primaryNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            
+            return (
+              <Button
+                key={item.path}
+                variant={isActive ? 'secondary' : 'ghost'}
+                className="w-full justify-start"
+                onClick={() => navigate(item.path)}
+              >
+                <Icon className="mr-2 h-4 w-4" />
+                {item.label}
+              </Button>
+            );
+          })}
+          
+          <div className="my-3 border-t border-sidebar-border" />
+          
+          {secondaryNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             
