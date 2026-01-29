@@ -33,18 +33,30 @@ export const useExecutiveSummaryData = () => {
 
 export const isActiveAtEndOfMonth = (employee: Employee, monthDate: Date): boolean => {
   const endOfMonthDate = lastDayOfMonth(monthDate);
-  const doj = new Date(employee.doj);
-  const exitDate = employee.date_of_exit ? new Date(employee.date_of_exit) : null;
+  
+  // Parse dates as UTC to avoid timezone issues
+  const dojParts = employee.doj.split('-').map(Number);
+  const doj = new Date(Date.UTC(dojParts[0], dojParts[1] - 1, dojParts[2]));
+  
+  const endOfMonthUTC = new Date(Date.UTC(
+    endOfMonthDate.getFullYear(),
+    endOfMonthDate.getMonth(),
+    endOfMonthDate.getDate()
+  ));
 
   // Employee must have joined on or before the end of month
-  if (doj > endOfMonthDate) return false;
+  if (doj > endOfMonthUTC) return false;
 
   // If no exit date, employee is still active
-  if (!exitDate) return true;
+  if (!employee.date_of_exit) return true;
 
-  // If exit date is on or after end of month, employee was active at end of month
-  // (An employee who exits on Sept 30 is still counted as active for September)
-  return exitDate >= endOfMonthDate;
+  // Parse exit date as UTC
+  const exitParts = employee.date_of_exit.split('-').map(Number);
+  const exitDate = new Date(Date.UTC(exitParts[0], exitParts[1] - 1, exitParts[2]));
+
+  // If exit date is after end of month, employee was active at end of month
+  // (An employee who exits on Sept 30 should NOT be counted for September)
+  return exitDate > endOfMonthUTC;
 };
 
 export const isActiveAsOfDate = (employee: Employee, asOfDate: Date): boolean => {
