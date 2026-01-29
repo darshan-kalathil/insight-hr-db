@@ -42,8 +42,9 @@ export const isActiveAtEndOfMonth = (employee: Employee, monthDate: Date): boole
   // If no exit date, employee is still active
   if (!exitDate) return true;
 
-  // If exit date is after end of month, employee was active at end of month
-  return exitDate > endOfMonthDate;
+  // If exit date is on or after end of month, employee was active at end of month
+  // (An employee who exits on Sept 30 is still counted as active for September)
+  return exitDate >= endOfMonthDate;
 };
 
 export const isActiveAsOfDate = (employee: Employee, asOfDate: Date): boolean => {
