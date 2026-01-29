@@ -54,23 +54,34 @@ export const isActiveAtEndOfMonth = (employee: Employee, monthDate: Date): boole
   const exitParts = employee.date_of_exit.split('-').map(Number);
   const exitDate = new Date(Date.UTC(exitParts[0], exitParts[1] - 1, exitParts[2]));
 
-  // If exit date is after end of month, employee was active at end of month
-  // (An employee who exits on Sept 30 should NOT be counted for September)
-  return exitDate > endOfMonthUTC;
+  // If exit date is on or after end of month, employee was active at end of month
+  // (An employee who exits on Sept 30 is still counted for September)
+  return exitDate >= endOfMonthUTC;
 };
 
 export const isActiveAsOfDate = (employee: Employee, asOfDate: Date): boolean => {
-  const doj = new Date(employee.doj);
-  const exitDate = employee.date_of_exit ? new Date(employee.date_of_exit) : null;
+  // Parse DOJ as UTC to avoid timezone issues
+  const dojParts = employee.doj.split('-').map(Number);
+  const doj = new Date(Date.UTC(dojParts[0], dojParts[1] - 1, dojParts[2]));
+  
+  const asOfDateUTC = new Date(Date.UTC(
+    asOfDate.getFullYear(),
+    asOfDate.getMonth(),
+    asOfDate.getDate()
+  ));
 
   // Employee must have joined on or before the given date
-  if (doj > asOfDate) return false;
+  if (doj > asOfDateUTC) return false;
 
   // If no exit date, employee is still active
-  if (!exitDate) return true;
+  if (!employee.date_of_exit) return true;
+
+  // Parse exit date as UTC
+  const exitParts = employee.date_of_exit.split('-').map(Number);
+  const exitDate = new Date(Date.UTC(exitParts[0], exitParts[1] - 1, exitParts[2]));
 
   // If exit date is after the given date, employee is still active
-  return exitDate > asOfDate;
+  return exitDate > asOfDateUTC;
 };
 
 export const getLevelHeadcountAsOfDate = (
