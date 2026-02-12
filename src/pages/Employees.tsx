@@ -115,8 +115,8 @@ const Employees = () => {
       doj: formData.get('doj') as string,
       date_of_exit: dateOfExit || null,
       location: formData.get('location') as string,
-      gender: formData.get('gender') as string,
-      birthday: formData.get('birthday') as string
+      gender: (formData.get('gender') as string) || null,
+      birthday: (formData.get('birthday') as string) || null
     };
 
     try {
