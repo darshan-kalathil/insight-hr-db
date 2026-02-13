@@ -7,13 +7,10 @@ import { useAbsenceTypes } from '@/hooks/useAbsenceTypes';
 import { useOrgAbsenceData } from '@/hooks/useOrgAbsenceData';
 import { useActiveEmployees } from '@/hooks/useActiveEmployees';
 import { useEmployeeAbsenceData } from '@/hooks/useEmployeeAbsenceData';
-import { useEmployeeAttendanceData } from '@/hooks/useEmployeeAttendanceData';
 import { AbsenceTypeSelect } from '@/components/AbsenceTypeSelect';
 import { DateRangePicker } from '@/components/DateRangePicker';
-import { LeaveHeatmap } from '@/components/LeaveHeatmap';
 import { OrgAbsenceLineChart } from '@/components/OrgAbsenceLineChart';
 import { EmployeeSelect } from '@/components/EmployeeSelect';
-import { EmployeeLeaveHeatmap } from '@/components/EmployeeLeaveHeatmap';
 import { EmployeeAbsenceLineChart } from '@/components/EmployeeAbsenceLineChart';
 import { EmployeeAbsenceSummary } from '@/components/EmployeeAbsenceSummary';
 import { getCurrentFinancialYear } from '@/lib/utils';
@@ -83,13 +80,6 @@ const LeaveAttendance = () => {
     employeeDateRange?.to || financialYear.endDate
   );
 
-  // Fetch employee attendance data
-  const { data: employeeAttendanceData, isLoading: isLoadingAttendance } = useEmployeeAttendanceData(
-    selectedEmployee,
-    employeeDateRange?.from || financialYear.startDate,
-    employeeDateRange?.to || financialYear.endDate
-  );
-
   // Handle errors
   useEffect(() => {
     if (typesError) {
@@ -114,9 +104,9 @@ const LeaveAttendance = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Leave & Attendance</h1>
+          <h1 className="text-3xl font-bold">Leave & Regularization</h1>
           <p className="text-muted-foreground mt-2">
-            View and manage employee leave and attendance records.
+            View employee leave and regularization trends.
           </p>
         </div>
 
@@ -155,37 +145,6 @@ const LeaveAttendance = () => {
                     />
                   </>
                 ) : null}
-              </CardContent>
-            </Card>
-
-            {/* Heatmap Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Absence Heatmap</CardTitle>
-                <CardDescription>
-                  Daily view of employee absences across the organization
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoadingData ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Skeleton className="h-[400px] w-full" />
-                  </div>
-                ) : selectedTypes.length === 0 ? (
-                  <div className="flex items-center justify-center py-12 text-muted-foreground">
-                    Please select at least one absence type to view the heatmap
-                  </div>
-                ) : orgData && orgData.length > 0 ? (
-                  <LeaveHeatmap
-                    data={orgData}
-                    startDate={dateRange?.from || financialYear.startDate}
-                    endDate={dateRange?.to || financialYear.endDate}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center py-12 text-muted-foreground">
-                    No data available for selected filters
-                  </div>
-                )}
               </CardContent>
             </Card>
 
@@ -262,55 +221,14 @@ const LeaveAttendance = () => {
               </CardContent>
             </Card>
 
-            {/* Heatmap Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Employee Absence Heatmap</CardTitle>
-                <CardDescription>
-                  Visual representation of selected employee absence patterns over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {(isLoadingEmployeeData || isLoadingAttendance) ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Skeleton className="h-[400px] w-full" />
-                  </div>
-                ) : !selectedEmployee ? (
-                  <div className="flex items-center justify-center py-12 text-muted-foreground">
-                    Please select an employee to view the heatmap
-                  </div>
-                ) : employeeSelectedTypes.length === 0 ? (
-                  <div className="flex items-center justify-center py-12 text-muted-foreground">
-                    Please select at least one absence type to view the heatmap
-                  </div>
-                ) : employeeData ? (
-                  <>
-                    <EmployeeAbsenceSummary
-                      data={employeeData}
-                      leaveTypes={absenceTypes?.leaveTypes || []}
-                      regularizationTypes={absenceTypes?.regularizationTypes || []}
-                      attendanceData={employeeAttendanceData || []}
-                      employeeCode={selectedEmployee}
-                      startDate={employeeDateRange?.from || financialYear.startDate}
-                      endDate={employeeDateRange?.to || financialYear.endDate}
-                    />
-                    <EmployeeLeaveHeatmap
-                      data={employeeData}
-                      attendanceData={employeeAttendanceData || []}
-                      startDate={employeeDateRange?.from || financialYear.startDate}
-                      endDate={employeeDateRange?.to || financialYear.endDate}
-                      leaveTypes={absenceTypes?.leaveTypes || []}
-                      regularizationTypes={absenceTypes?.regularizationTypes || []}
-                      employeeCode={selectedEmployee}
-                    />
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center py-12 text-muted-foreground">
-                    No data available for selected filters
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Absence Summary */}
+            {selectedEmployee && employeeData && (
+              <EmployeeAbsenceSummary
+                data={employeeData}
+                leaveTypes={absenceTypes?.leaveTypes || []}
+                regularizationTypes={absenceTypes?.regularizationTypes || []}
+              />
+            )}
 
             {/* Trends Section */}
             <Card>
