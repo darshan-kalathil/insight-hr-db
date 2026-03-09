@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Upload, CheckCircle, XCircle, AlertCircle, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 type ImportResult = {
   total: number;
@@ -41,6 +41,34 @@ export const EmployeeImport = ({
     }
     return null;
   };
+  const handleDownloadTemplate = () => {
+    const templateData = [{
+      'Empl No': 'EMP001',
+      'Name': 'John Doe',
+      'Official EMail ID': 'john.doe@company.com',
+      'Mobile Number': '9876543210',
+      'Personal EMail ID': 'john.personal@email.com',
+      'Status': 'Active',
+      'POD': 'Engineering',
+      'POD Lead': 'Jane Smith',
+      'Reporting Manager': 'Bob Wilson',
+      'Level': 'L1',
+      'Location': 'Delhi',
+      'Gender': 'Male',
+      'Type': 'EMP',
+      'Fixed Salary': 50000,
+      'EPF': 1800,
+      'DOJ': '2024-01-01',
+      'Date of Exit': '',
+      'Birthday': '1990-01-01'
+    }];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    XLSX.writeFile(wb, 'employee_import_template.xlsx');
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -157,16 +185,22 @@ export const EmployeeImport = ({
 Existing employees will be updated.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} disabled={importing} className="hidden" id="excel-upload" />
-          <label htmlFor="excel-upload">
-            <Button asChild disabled={importing}>
-              <span className="cursor-pointer">
-                <Upload className="mr-2 h-4 w-4" />
-                {importing ? 'Importing...' : 'Choose Excel File'}
-              </span>
-            </Button>
-          </label>
+        <div className="flex flex-wrap gap-4 items-center">
+          <div>
+            <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} disabled={importing} className="hidden" id="excel-upload" />
+            <label htmlFor="excel-upload">
+              <Button asChild disabled={importing}>
+                <span className="cursor-pointer">
+                  <Upload className="mr-2 h-4 w-4" />
+                  {importing ? 'Importing...' : 'Choose Excel File'}
+                </span>
+              </Button>
+            </label>
+          </div>
+          <Button variant="outline" onClick={handleDownloadTemplate}>
+            <Download className="mr-2 h-4 w-4" />
+            Download Template
+          </Button>
         </div>
 
         {result && <div className="space-y-3 mt-4">
