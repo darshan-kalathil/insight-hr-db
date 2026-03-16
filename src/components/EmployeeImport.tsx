@@ -242,6 +242,10 @@ Existing employees will be updated.</CardDescription>
             <Download className="mr-2 h-4 w-4" />
             Download Template
           </Button>
+          <Button variant="outline" onClick={handleDownloadAllEmployees}>
+            <Download className="mr-2 h-4 w-4" />
+            Download All Employees
+          </Button>
         </div>
 
         {result && <div className="space-y-3 mt-4">
