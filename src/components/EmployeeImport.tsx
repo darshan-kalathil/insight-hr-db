@@ -69,6 +69,47 @@ export const EmployeeImport = ({
     XLSX.writeFile(wb, 'employee_import_template.xlsx');
   };
 
+  const handleDownloadAllEmployees = async () => {
+    try {
+      const { data, error } = await supabase.from('employees').select('*').order('empl_no');
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        toast({ title: 'No Data', description: 'No employee records found.', variant: 'destructive' });
+        return;
+      }
+
+      const exportData = data.map(emp => ({
+        'Empl No': emp.empl_no,
+        'Name': emp.name,
+        'Official EMail ID': emp.official_email,
+        'Mobile Number': emp.mobile_number || '',
+        'Personal EMail ID': emp.personal_email || '',
+        'Status': emp.status,
+        'POD': emp.pod,
+        'POD Lead': emp.pod_lead || '',
+        'Reporting Manager': emp.reporting_manager || '',
+        'Level': emp.level,
+        'Location': emp.location,
+        'Gender': emp.gender || '',
+        'Type': emp.type || '',
+        'Fixed Salary': emp.salary || '',
+        'EPF': emp.epf || '',
+        'DOJ': emp.doj,
+        'Date of Exit': emp.date_of_exit || '',
+        'Birthday': emp.birthday || '',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Employees');
+      XLSX.writeFile(wb, 'all_employees.xlsx');
+
+      toast({ title: 'Download Complete', description: `Exported ${data.length} employee records.` });
+    } catch (error: any) {
+      toast({ title: 'Download Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
